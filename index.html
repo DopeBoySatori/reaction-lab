@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="ka">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black">
+<title>Reaction Lab · ფაზა 0</title>
+<style>
+:root{--bg:#0d1620;--panel:#15222f;--line:#24384a;--ink:#e6eef5;--dim:#8aa0b4;--gold:#d9b25c;--teal:#3fc6d9;--red:#e0605a;--ok:#5fd18a}
+*{box-sizing:border-box;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
+html,body{margin:0;height:100%;background:var(--bg);color:var(--ink);font:15px/1.4 -apple-system,system-ui,sans-serif;overflow:hidden;overscroll-behavior:none}
+#app{position:fixed;inset:0;padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left)}
+.scr{position:absolute;inset:0;display:none}.scr.on{display:block}
+#home{overflow:auto;padding:14px 18px calc(14px + env(safe-area-inset-bottom)) calc(18px + env(safe-area-inset-left));touch-action:pan-y}
+h1{font-size:19px;margin:0 0 2px;color:var(--gold)}
+.sub{color:var(--dim);font-size:13px;margin-bottom:12px}
+.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:10px 12px}
+.card b{display:block;font-size:14px}.card small{color:var(--dim);display:block;margin:3px 0 8px;font-size:12px}
+.st{font-size:12px;color:var(--dim)}.st.ok{color:var(--ok)}.st.bad{color:var(--red)}
+button{font:inherit;background:var(--line);color:var(--ink);border:0;border-radius:8px;padding:8px 12px}
+button.go{background:var(--teal);color:#06202a;font-weight:600}
+.row{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin:12px 0}
+label{font-size:13px;color:var(--dim)}select,input{font:inherit;background:var(--panel);color:var(--ink);border:1px solid var(--line);border-radius:6px;padding:4px 6px}
+#test{touch-action:none;background:#0a1118}
+#msg{position:absolute;left:50%;top:38%;transform:translate(-50%,-50%);text-align:center;font-size:17px;max-width:70%;pointer-events:none}
+#msg small{display:block;color:var(--dim);font-size:13px;margin-top:6px}
+#stop{position:absolute;top:calc(8px + env(safe-area-inset-top));left:50%;transform:translateX(-50%);background:var(--red);color:#fff;font-weight:700;z-index:9;padding:8px 22px}
+.dot{position:absolute;width:64px;height:64px;margin:-32px 0 0 -32px;border-radius:50%;border:3px solid var(--teal);pointer-events:none}
+#stim{position:absolute;top:0;bottom:0;width:50%;display:none;background:radial-gradient(circle at center,rgba(217,178,92,.85) 0 70px,transparent 72px)}
+.half{position:absolute;top:0;bottom:0;width:1px;left:50%;background:var(--line)}
+table{border-collapse:collapse;width:100%;font-size:13px}td{padding:3px 6px;border-bottom:1px solid var(--line)}td:first-child{color:var(--dim)}
+.hist{display:flex;gap:4px;align-items:flex-end;height:44px;margin-top:6px}.hist i{flex:1;background:var(--teal);min-height:1px;border-radius:2px 2px 0 0}
+.hl{display:flex;gap:4px;font-size:10px;color:var(--dim)}.hl span{flex:1;text-align:center}
+#warn{display:none;position:fixed;inset:0;background:var(--bg);z-index:20;align-items:center;justify-content:center;text-align:center;padding:30px;font-size:17px}
+@media (orientation:portrait){#warn{display:flex}}
+</style>
+</head>
+<body>
+<div id="warn">მოატრიალე ტელეფონი ჰორიზონტალურად ↻</div>
+<div id="app">
+<section id="home" class="scr on">
+  <h1>Reaction Lab · ფაზა 0</h1>
+  <div class="sub">შენს iPhone-ზე ვზომავთ ფაქტებს და არაფერს ვუშვებთ დაშვებით (FA-4…6, J-7). ყოველი ტესტი 5–40 წამია. STOP ყოველთვის ზემოთაა. თუ რამე გტკივა, შეწყვიტე.</div>
+  <div class="row">
+    <label>Low Power <select id="c_lp"><option value="">?</option><option>არა</option><option>კი</option></select></label>
+    <label>დამტენზე <select id="c_ch"><option value="">?</option><option>არა</option><option>კი</option></select></label>
+    <label>ბატარეა % <input id="c_bat" type="number" min="1" max="100" style="width:60px"></label>
+    <label>ტელეფონი <select id="c_th"><option value="">?</option><option>ცივი</option><option>თბილი</option><option>ცხელი</option></select></label>
+    <label>დისკომფორტი <select id="c_pain"><option>0</option><option>1</option><option>2</option><option>3</option></select></label>
+    <label>დაჭერა <select id="c_grip"><option>claw-4</option><option>3 თითი</option><option>2 ცერა</option></select></label>
+  </div>
+  <div class="grid" id="cards"></div>
+  <div class="row">
+    <button class="go" id="b_rep">📊 რეპორტი</button>
+    <button id="b_copy">📋 JSON-ის კოპირება</button>
+    <button id="b_dl">📄 JSON ტექსტად</button>
+    <button id="b_clr">🗑 წაშლა</button>
+    <span class="st" id="saved"></span>
+  </div>
+  <div class="card" style="margin-top:10px"><b>ფაზა 1 · HUD დიაგნოსტიკა →</b><small>შენს ნამდვილ HUD-ზე: დაჭერა, დამიზნება, გადასრიალება, ჯაჭვი, hero-lock</small><a href="p1.html"><button class="go">გახსნა</button></a></div>
+  <div id="report"></div>
+</section>
+<section id="test" class="scr">
+  <div class="half" id="half" style="display:none"></div>
+  <div id="stim"></div>
+  <div id="msg"></div>
+  <button id="stop">STOP</button>
+</section>
+</div>
+<script>
+"use strict";
+const SCHEMA="rl-p0-1", HUD_VERSION="IMG_2243 · Large Button · S3 127%";
+const $=id=>document.getElementById(id);
+const now=()=>performance.now();
+let DB;
+function blank(){return{schema_version:SCHEMA,created:new Date().toISOString(),device:null,sessions:[],results:{},trials:[],techlog:[]}}
+function load(){try{DB=JSON.parse(localStorage.getItem("rl_p0"))||blank()}catch(e){DB=blank()}if(DB.schema_version!==SCHEMA)DB=blank()}
+function save(){try{localStorage.setItem("rl_p0",JSON.stringify(DB));$("saved").textContent="შენახულია ✓"}catch(e){$("saved").textContent="შენახვა ვერ მოხერხდა — გამოიყენე JSON ექსპორტი";tlog("storage_fail",String(e))}}
+function tlog(k,v){DB.techlog.push({t:new Date().toISOString(),k,v})}
+window.addEventListener("error",e=>{tlog("js_error",e.message);save()});
+const q=(a,p)=>{if(!a.length)return null;const s=[...a].sort((x,y)=>x-y);return s[Math.min(s.length-1,Math.floor(p*(s.length)))]};
+const r1=x=>x==null?null:Math.round(x*10)/10;
+function conds(){return{low_power:$("c_lp").value||null,charging:$("c_ch").value||null,battery:+$("c_bat").value||null,thermal:$("c_th").value||null,discomfort:+$("c_pain").value,grip:$("c_grip").value,visibility:document.visibilityState}}
+
+/* ---- device profile (RT-016) ---- */
+function device(){
+  const p=document.createElement("div");p.style.cssText="position:fixed;padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left)";document.body.appendChild(p);
+  const cs=getComputedStyle(p);const sa={t:parseFloat(cs.paddingTop),r:parseFloat(cs.paddingRight),b:parseFloat(cs.paddingBottom),l:parseFloat(cs.paddingLeft)};p.remove();
+  return{ua:navigator.userAgent,screen_pt:[screen.width,screen.height],viewport_pt:[innerWidth,innerHeight],dpr:devicePixelRatio,
+    viewport_px:[Math.round(innerWidth*devicePixelRatio),Math.round(innerHeight*devicePixelRatio)],safe_area_pt:sa,
+    orientation:(screen.orientation&&screen.orientation.type)||String(window.orientation),standalone:!!navigator.standalone||matchMedia("(display-mode: standalone)").matches,
+    max_touch_points:navigator.maxTouchPoints,note:"კოორდინატები ლოგიკურ pt-შია (CSS px); px = pt×dpr"}
+}
+
+/* ---- test runner ---- */
+let RUN=null;
+function enter(t){RUN={t,stopped:false,cleanup:[]};$("home").classList.remove("on");$("test").classList.add("on");DB.sessions.push({test:t,start:new Date().toISOString(),cond:conds(),hud_version:HUD_VERSION});}
+function on(el,ev,fn,o){el.addEventListener(ev,fn,o||{passive:false});RUN.cleanup.push(()=>el.removeEventListener(ev,fn,o||{passive:false}))}
+function leave(){if(!RUN)return;RUN.stopped=true;RUN.cleanup.forEach(f=>f());RUN=null;$("test").classList.remove("on");$("home").classList.add("on");
+  $("stim").style.display="none";$("half").style.display="none";document.querySelectorAll(".dot").forEach(d=>d.remove());DB.device=device();save();render()}
+$("stop").addEventListener("click",e=>{e.stopPropagation();if(RUN){tlog("stop",RUN.t);DB.sessions[DB.sessions.length-1].stopped=true}leave()});
+const msg=(a,b)=>$("msg").innerHTML=a+(b?"<small>"+b+"</small>":"");
+const prevent=e=>{if(e.target.id!=="stop")e.preventDefault()};
+
+/* T1: frames (RT-009) */
+function tFrames(){enter("frames");msg("არ შეეხო ეკრანს 6 წამი","ვზომავთ ეკრანის რეალურ სიხშირეს (rAF)");
+  const d=[];let last=null,t0=now();
+  function f(ts){if(!RUN||RUN.stopped)return;if(last!=null)d.push(ts-last);last=ts;if(ts-t0<6000)requestAnimationFrame(f);else{
+    const med=q(d,.5),p95=q(d,.95),drops=d.filter(x=>x>med*1.5).length;
+    DB.results.frames={n:d.length,median_ms:r1(med),p95_ms:r1(p95),est_hz:Math.round(1000/med),drops,hist:hist(d,[0,7,9.5,12,18,25,40,1e9])};leave()}}
+  requestAnimationFrame(f)}
+function hist(a,edges){const h=edges.slice(0,-1).map(()=>0);a.forEach(x=>{for(let i=0;i<edges.length-1;i++)if(x>=edges[i]&&x<edges[i+1]){h[i]++;break}});return{edges,counts:h}}
+
+/* T2: touch sampling (RT-007/009) */
+function tTouch(){enter("touch");msg("ერთი თითით ატრიალე ეკრანზე 5 წამი","ვზომავთ, რამდენად ხშირად აწვდის Safari შეხების მოვლენებს");
+  const ts=[],perFrame=[];let cnt=0,start=null,raf;
+  function fr(){perFrame.push(cnt);cnt=0;if(RUN&&!RUN.stopped)raf=requestAnimationFrame(fr)}raf=requestAnimationFrame(fr);RUN.cleanup.push(()=>cancelAnimationFrame(raf));
+  on($("test"),"touchmove",e=>{prevent(e);cnt++;ts.push(e.timeStamp);if(start==null)start=now();if(now()-start>5000)done()});
+  on($("test"),"touchstart",prevent);
+  function done(){const d=[];for(let i=1;i<ts.length;i++)d.push(ts[i]-ts[i-1]);const med=q(d,.5);
+    const pf=perFrame.filter(x=>x>0);DB.results.touch={events:ts.length,median_interval_ms:r1(med),est_hz:med?Math.round(1000/med):null,p95_ms:r1(q(d,.95)),events_per_frame_median:q(pf,.5),hist:hist(d,[0,5,7,9.5,12,18,40,1e9])};leave()}}
+
+/* T3: multi-touch (K-1, FA-1) */
+function tMulti(){enter("multi");msg("დადე 4 თითი ისე, როგორც თამაშში","ჯერ 3 წამი გაჩერდი, მერე ერთდროულად ამოძრავე ყველა თითი 5 წამი");
+  const dots={};let max=0,cancels=0,lost=0,held4=null,moving=null,moveEvents=0,ok=false;const pos=[];
+  function draw(e){const seen=new Set();for(const t of e.touches){seen.add(t.identifier);let d=dots[t.identifier];if(!d){d=dots[t.identifier]=document.createElement("div");d.className="dot";$("test").appendChild(d)}d.style.left=t.clientX+"px";d.style.top=t.clientY+"px"}
+    for(const k in dots)if(!seen.has(+k)){dots[k].remove();delete dots[k]}}
+  const hd=e=>{prevent(e);draw(e);const n=e.touches.length;max=Math.max(max,n);
+    if(n>=4&&held4==null){held4=now();pos.push([...e.touches].map(t=>({x:r1(t.clientX/innerWidth*100),y:r1(t.clientY/innerHeight*100)})))}
+    if(n<4&&held4!=null&&!ok){lost++;held4=null;moving=null;msg("თითი აიშვა — თავიდან დადე 4 თითი")}
+    if(held4!=null){const el=now()-held4;if(el<3000)msg("გაჩერდი… "+Math.ceil((3000-el)/1000));else{if(moving==null)moving=now();if(e.type==="touchmove")moveEvents++;const m=now()-moving;msg("ამოძრავე ყველა თითი… "+Math.ceil((5000-m)/1000));if(m>5000){ok=true;fin()}}}};
+  on($("test"),"touchstart",hd);on($("test"),"touchmove",hd);on($("test"),"touchend",hd);
+  on($("test"),"touchcancel",e=>{cancels++;tlog("touchcancel",e.touches.length);hd(e)});
+  function fin(){DB.results.multi={max_touches:max,held_4_plus_move:ok,move_events:moveEvents,touchcancel:cancels,lost_finger_resets:lost,start_positions_pct:pos[0]||null};leave()}}
+
+/* T4: HUD map (K-3) */
+const HUD_T=[["joy","ჯოისტიკის ცენტრი (მარცხ. ცერა)"],["atk","ბაზური შეტევა"],["s1","სკილი 1"],["s2","სკილი 2"],["ult","ულტი"],["spell","Battle Spell (Flicker)"],["lock","ყველაზე ხშირად გამოყენებული hero-lock პორტრეტი"],["shop","მაღაზია $ (საჩვენებელით?)"],["map","მინიმაპი (საჩვენებელით?)"],["kda","სქორბორდი/KDA"]];
+function tHud(){enter("hud");let i=0;const out={};const st=[];
+  const ask=()=>msg("დააჭირე: <b>"+HUD_T[i][1]+"</b>","იმ თითით, რომლითაც თამაშში აჭერ · "+(i+1)+"/"+HUD_T.length+" · ორჯერ სწრაფად = გამოტოვება");
+  ask();let lastTap=0;
+  on($("test"),"touchstart",e=>{prevent(e);const t=e.changedTouches[0];const n=now();
+    if(n-lastTap<300&&i>0&&out[HUD_T[i-1][0]]&&out[HUD_T[i-1][0]].just){/*double-tap = skip previous*/out[HUD_T[i-1][0]]=null;lastTap=0;ask();return}
+    lastTap=n;out[HUD_T[i][0]]={x_pct:r1(t.clientX/innerWidth*100),y_pct:r1(t.clientY/innerHeight*100),x_pt:Math.round(t.clientX),y_pt:Math.round(t.clientY),r_pt:r1(t.radiusX||0),just:true};
+    if(i>0&&out[HUD_T[i-1][0]])delete out[HUD_T[i-1][0]].just;
+    const d=document.createElement("div");d.className="dot";d.style.left=t.clientX+"px";d.style.top=t.clientY+"px";d.style.borderColor="var(--gold)";$("test").appendChild(d);
+    i++;if(i>=HUD_T.length){for(const k in out)if(out[k])delete out[k].just;DB.results.hud={hud_version:HUD_VERSION,viewport_pt:[innerWidth,innerHeight],points:out};setTimeout(leave,400)}else ask()})}
+
+/* T5: choice reaction (RT-001/002, D-1..15) */
+function tReact(){enter("react");const N=24;let k=0,state="wait",stimT=null,shownT=null,side=null,timer=null,sid=0;const rows=[];
+  $("half").style.display="block";msg("ოქრო რომ გამოჩნდება, შეეხე იმ მხარეს: მარცხნივ → მარცხ. ცერა, მარჯვნივ → მარჯვ. ცერა","შეეხე ეკრანს, რომ დაიწყო · "+N+" ცდა");
+  function arm(){state="armed";stimT=null;shownT=null;$("stim").style.display="none";msg("");const delay=1200+Math.random()*2300;const sched=now()+delay;side=Math.random()<.5?"L":"R";sid++;
+    timer=setTimeout(()=>{requestAnimationFrame(ts=>{if(!RUN)return;stimT=ts;state="live";const s=$("stim");s.style.left=side==="L"?"0":"50%";s.style.display="block";
+      requestAnimationFrame(ts2=>{shownT=ts2})})},delay);RUN.cleanup.push(()=>clearTimeout(timer));rows.sched=sched}
+  on($("test"),"touchstart",e=>{prevent(e);const t=e.changedTouches[0];const tt=e.timeStamp,hn=now();const act=t.clientX<innerWidth/2?"L":"R";
+    if(state==="wait"){arm();return}
+    if(state==="armed"){clearTimeout(timer);rec({premature:true,actual:act,tt,hn,t});msg("ადრე! ⏸","");setTimeout(()=>RUN&&arm(),700);return}
+    if(state==="live"){state="done";const rt=tt-stimT;rec({premature:rt<100,actual:act,tt,hn,t,rt});
+      msg(act===side?Math.round(rt)+" ms":"არასწორი მხარე","");k++;if(k>=N){setTimeout(fin,500)}else setTimeout(()=>RUN&&arm(),600)}});
+  function rec(o){DB.trials.push({schema_version:SCHEMA,test:"react_choice_v1",trial:DB.trials.length+1,stimulus_id:"side_flash#"+sid,intended:side,actual:o.actual,correct:!o.premature&&o.actual===side,
+    rt_observed_ms:o.rt!=null?r1(o.rt):null,premature:!!o.premature,ts:{scheduled:r1(rows.sched),frame_set:r1(stimT),frame_next:r1(shownT),touch_event:r1(o.tt),handler:r1(o.hn)},
+    pos_pct:{x:r1(o.t.clientX/innerWidth*100),y:r1(o.t.clientY/innerHeight*100)},touches:1,difficulty:"2-choice",hud_version:HUD_VERSION,patch:null,device:"see DB.device",
+    note:"rt_observed = touch_event − frame_set; ეს არ არის ფიზიოლოგიური RT (FA-4). ეკრანის ჩვენების დრო ≈ frame_set…frame_next შუალედში"});stimT=stimT}
+  function fin(){const v=DB.trials.filter(x=>x.test==="react_choice_v1"&&!x.premature&&x.correct&&x.rt_observed_ms!=null).slice(-N).map(x=>x.rt_observed_ms);
+    const all=DB.trials.filter(x=>x.test==="react_choice_v1").slice(-N-10);
+    DB.results.react={valid:v.length,median_ms:r1(q(v,.5)),p25:r1(q(v,.25)),p75:r1(q(v,.75)),wrong_side:all.filter(x=>!x.premature&&!x.correct).length,premature:all.filter(x=>x.premature).length,
+      frame_uncertainty_ms:DB.results.frames?DB.results.frames.median_ms:null};leave()}}
+
+/* ---- home / report ---- */
+const TESTS=[["frames","1 · ეკრანის სიხშირე","6 წმ, არ შეეხო",tFrames],["touch","2 · შეხების სიხშირე","5 წმ, ერთი თითი",tTouch],["multi","3 · 4 თითი","3 წმ გაჩერება + 5 წმ მოძრაობა",tMulti],["hud","4 · HUD რუკა","10 შეხება შენს ღილაკებზე",tHud],["react","5 · რეაქცია (საბაზისო)","24 ცდა, ~1.5 წთ",tReact],["dev","6 · მოწყობილობა","ავტომატურად",()=>{DB.device=device();save();render()}]];
+function render(){const c=$("cards");c.innerHTML="";TESTS.forEach(([k,n,s,fn])=>{const done=k==="dev"?!!DB.device:!!DB.results[k];const d=document.createElement("div");d.className="card";
+  d.innerHTML="<b>"+n+"</b><small>"+s+"</small><span class='st "+(done?"ok":"")+"'>"+(done?"✓ გაზომილია":"ჯერ არა")+"</span> ";const b=document.createElement("button");b.textContent=done?"თავიდან":"დაწყება";b.className=done?"":"go";b.onclick=fn;b.style.float="right";d.appendChild(b);c.appendChild(d)})}
+function gates(){const R=DB.results,F=R.frames,T=R.touch,M=R.multi,H=R.hud,X=R.react;return[
+  ["G1 ეკრანის სიხშირე გაზომილია (ჰისტოგრამით)",!!F,F?F.est_hz+" Hz (მედიანა "+F.median_ms+" ms, p95 "+F.p95_ms+")":"—"],
+  ["G2 შეხების სიხშირე გაზომილია",!!T,T?(T.est_hz||"?")+" Hz (მედ. "+T.median_interval_ms+" ms), "+T.events_per_frame_median+"/კადრი":"—"],
+  ["G3 4 თითი იკითხება დაკარგვის გარეშე",!!M&&M.held_4_plus_move&&M.touchcancel===0,M?"max "+M.max_touches+", cancel "+M.touchcancel+", რესეტი "+M.lost_finger_resets:"—"],
+  ["G4 HUD რუკა ჩაწერილია (≥7 წერტილი)",!!H&&Object.values(H.points).filter(Boolean).length>=7,H?Object.values(H.points).filter(Boolean).length+"/10":"—"],
+  ["G5 საბაზისო რეაქცია ≥20 ვალიდური ცდა",!!X&&X.valid>=20,X?"მედ. "+X.median_ms+" ms (IQR "+X.p25+"–"+X.p75+"), შეცდ. "+X.wrong_side+", ადრე "+X.premature:"—"],
+  ["G6 მოწყობილობის პროფილი + Safe Area",!!DB.device,DB.device?DB.device.viewport_pt.join("×")+" pt, dpr "+DB.device.dpr+", SA "+JSON.stringify(DB.device.safe_area_pt):"—"],
+  ["G7 ექსპორტი მუშაობს","exp" in DB,DB.exp||"დააჭირე კოპირებას ან ტექსტს"]]}
+function report(){const g=gates();let h="<div class='card' style='margin-top:10px'><table>";g.forEach(([n,p,v])=>h+="<tr><td>"+(p?"✅ ":"⏳ ")+n+"</td><td>"+v+"</td></tr>");h+="</table>";
+  const pass=g.every(x=>x[1]);h+="<p class='st "+(pass?"ok":"")+"'>"+(pass?"ფაზა 0 გეიტი: გავლილია → JSON გამოუგზავნე ჯარვისს":"ფაზა 0 გეიტი: ჯერ არ არის გავლილი")+"</p>";
+  [["frames","ეკრანი, ms"],["touch","შეხება, ms"]].forEach(([k,n])=>{const r=DB.results[k];if(!r)return;const m=Math.max(...r.hist.counts,1);
+    h+="<div class='st'>"+n+"</div><div class='hist'>"+r.hist.counts.map(c=>"<i style='height:"+(c/m*100)+"%'></i>").join("")+"</div><div class='hl'>"+r.hist.edges.slice(0,-1).map((e,i)=>"<span>"+(r.hist.edges[i+1]>1e8?">"+e:e+"–"+r.hist.edges[i+1])+"</span>").join("")+"</div>"});
+  $("report").innerHTML=h+"</div>"}
+$("b_rep").onclick=report;
+function dump(){DB.device=DB.device||device();return JSON.stringify(DB,null,1)}
+$("b_copy").onclick=async()=>{try{await navigator.clipboard.writeText(dump());DB.exp="clipboard "+new Date().toLocaleTimeString();save();$("saved").textContent="დაკოპირდა ✓"}catch(e){$("saved").textContent="კოპირება ვერ მოხერხდა — სცადე ფაილი";tlog("copy_fail",String(e))}};
+$("b_dl").onclick=()=>{$("report").innerHTML="<textarea id='jt' readonly style='width:100%;height:160px;font:11px monospace;background:#0a1118;color:#e6eef5;-webkit-user-select:text;user-select:text'></textarea>";const t=$("jt");t.value=dump();t.focus();t.select();DB.exp="text "+new Date().toLocaleTimeString();save()};
+$("b_clr").onclick=()=>{if(confirm("წავშალო ყველა გაზომვა?")){DB=blank();save();render();$("report").innerHTML=""}};
+document.addEventListener("gesturestart",e=>e.preventDefault());
+document.addEventListener("visibilitychange",()=>{if(document.hidden&&RUN){tlog("hidden_during",RUN.t);DB.sessions[DB.sessions.length-1].interrupted=true;leave()}});
+load();render();
+</script>
+</body>
+</html>
