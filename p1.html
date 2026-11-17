@@ -58,10 +58,12 @@ const SCENES={
   shop:{x:2345,y:55,r:85,f:"RI",n:"მაღაზია $"},qbuy:{x:2210,y:190,r:65,f:"RI",n:"Quick-buy"},kda:{x:2030,y:55,r:70,f:"RI",n:"KDA / სქორბორდი"},
   sig_atk:{x:2380,y:175,r:50,f:"RI",n:"სიგნალი: შეტევა"},sig_ret:{x:2380,y:285,r:50,f:"RI",n:"სიგნალი: Retreat"},sig_gat:{x:2380,y:390,r:50,f:"RI",n:"სიგნალი: შეკრება"},
   map:{x:340,y:205,r:190,f:"LI",n:"მინიმაპი"},zoom:{x:600,y:385,r:45,f:"LI",n:"მინიმაპის გადიდება"},joy:{x:490,y:930,r:200,f:"LT",n:"ჯოისტიკი"}}},
+ kaleaA:null,
  lock:{img:"hud_lock.jpg",hero:"lock-scene",skills:3,btn:{
   atk:{x:2185,y:1000,r:150,f:"RT",n:"ბაზური შეტევა"},s1:{x:1835,y:1015,r:90,f:"RT",n:"სკილი 1"},s2:{x:1955,y:795,r:90,f:"RT",n:"სკილი 2"},
   ult:{x:2185,y:690,r:95,f:"RT",n:"ულტი"},spell:{x:1645,y:1060,r:65,f:"RT",n:"Revitalize"},joy:{x:490,y:930,r:200,f:"LT",n:"ჯოისტიკი"}},
   lockp:[{x:2000,y:460},{x:1865,y:535},{x:1745,y:635},{x:1655,y:760},{x:1605,y:910}],lockr:70}};
+SCENES.kaleaA={img:"hud_kalea_A.jpg",hero:"Kalea-v2A",skills:3,btn:Object.assign({},SCENES.kalea.btn,{spell:{x:2000,y:575,r:65,f:"RT",n:"Flicker (v2A)"}})};
 const $=id=>document.getElementById(id),now=()=>performance.now(),r1=x=>x==null?null:Math.round(x*10)/10;
 const q=(a,p)=>{if(!a.length)return null;const s=[...a].sort((x,y)=>x-y);return s[Math.min(s.length-1,Math.floor(p*s.length))]};
 let DB;function blank(){return{schema_version:SCHEMA,created:new Date().toISOString(),hud_version:"HUD-v1 (IMG_2252/2256)",trials:[],blocks:[],techlog:[]}}
@@ -91,11 +93,12 @@ const BLOCKS=[
  ["aim","B · დამიზნება","სკილი + გადაათრიე ისრის მიმართულებით (10)","kalea",()=>shuffle(Array.from({length:10},(_,i)=>({type:"aim",k:["s1","s2","ult"][i%3],ang:-Math.PI+Math.random()*2*Math.PI}))) ],
  ["swipe","C · გადასრიალება","ღილაკიდან ღილაკზე, ჰირარას ტიპის (8)","kalea",()=>shuffle([["s1","s2"],["s2","s1"],["s1","ult"],["ult","s2"],["s1","s2"],["s2","s1"],["s2","ult"],["ult","s1"]]).map(([a,b])=>({type:"swipe",a,b}))],
  ["chain","D · კომბო-ჯაჭვი","3 ღილაკი რიგით: 1→2→3 (8)","kalea",()=>shuffle([["s2","s1","ult"],["spell","ult","s1"],["s1","s2","atk"],["ult","spell","s2"],["s2","ult","s1"],["s1","spell","ult"],["atk","s2","s1"],["spell","s2","ult"]]).map(seq=>({type:"chain",seq}))],
+ ["flk","F · Flicker↔ულტი: HUD-v1 vs v2A","ერთმანეთში არეული ორი განლაგება, 24 ჯაჭვი (~1.5 წთ)","kalea",()=>{const Q=[["spell","ult"],["ult","spell"],["spell","ult","s1"],["s2","spell","ult"]],o=[];for(let i=0;i<24;i++)o.push({type:"chain",seq:Q[Math.floor(i/2)%4],scene:i%2?"kaleaA":"kalea"});const pairs=[];for(let i=0;i<24;i+=2)pairs.push(Math.random()<.5?[o[i],o[i+1]]:[o[i+1],o[i]]);return shuffle(pairs).flat()}],
  ["lock","E · Hero-lock ფონი","იგივე დაჭერები, ეკრანზე 5 lock-პორტრეტია (12)","lock",()=>shuffle(["atk","s1","s2","ult","spell","s1","s2","ult","atk","spell","s2","s1"]).map(k=>({type:"tap",k}))]];
 /* runner */
 let RUN=null;
 function start(bi){const [id,name,,scene,mk]=BLOCKS[bi];SC=SCENES[scene];$("bg").src=SC.img;$("home").classList.remove("on");$("test").classList.add("on");geo();
-  RUN={id,plan:mk(),i:0,state:"intro",cueT:null,cleanup:[],cur:null};DB.blocks.push({block:id,start:new Date().toISOString(),fullscreen:DB.fullscreen,scene,hero:SC.hero,viewport:[innerWidth,innerHeight],scale:r1(G.s*1000)/1000});
+  [SCENES.kaleaA.img,SCENES.kalea.img].forEach(u=>{const im=new Image();im.src=u});RUN={id,plan:mk(),i:0,state:"intro",cueT:null,cleanup:[],cur:null};DB.blocks.push({block:id,start:new Date().toISOString(),fullscreen:DB.fullscreen,scene,hero:SC.hero,viewport:[innerWidth,innerHeight],scale:r1(G.s*1000)/1000});
   msg("მარცხენა ცერა დადე ჯოისტიკზე და გაიჩერე","მერე მარჯვენა ხელით შეეხე ეკრანს, რომ დაიწყოს · "+name);
   const T=$("test"),o={passive:false};
   const ts=e=>{if(e.target.id==="stop")return;e.preventDefault();for(const t of e.changedTouches)ACT.set(t.identifier,{x:t.clientX,y:t.clientY,t0:e.timeStamp,sx:t.clientX,sy:t.clientY});handle("down",e)};
@@ -106,6 +109,7 @@ function start(bi){const [id,name,,scene,mk]=BLOCKS[bi];SC=SCENES[scene];$("bg")
 function stop(partial){if(!RUN)return;clearTimeout(RUN.timer);RUN.cleanup.forEach(f=>f());if(partial)DB.blocks[DB.blocks.length-1].stopped=true;RUN=null;ACT.clear();clear();msg("");$("test").classList.remove("on");$("home").classList.add("on");save();render()}
 $("stop").addEventListener("touchstart",e=>{e.preventDefault();e.stopPropagation();stop(true)},{passive:false});$("stop").addEventListener("click",()=>stop(true));
 function next(){clear();msg("");if(!RUN)return;if(RUN.i>=RUN.plan.length){stop(false);return}
+  const sc=RUN.plan[RUN.i].scene;if(sc&&SCENES[sc]!==SC){SC=SCENES[sc];$("bg").src=SC.img}
   $("prog").textContent=(RUN.i+1)+"/"+RUN.plan.length;RUN.state="wait";RUN.cur=Object.assign({},RUN.plan[RUN.i],{hits:[],touches:[]});
   RUN.timer=setTimeout(()=>requestAnimationFrame(ts=>{if(!RUN)return;cue(RUN.cur);RUN.cueT=ts;RUN.state="live";RUN.joyAtCue=joyHeld()}),600+Math.random()*900)}
 function cue(c){const B=SC.btn;
@@ -146,9 +150,12 @@ function report(){const T=DB.trials;let h="<div class='card' style='margin-top:1
   const aim=T.filter(t=>t.type==="aim");if(aim.length){const ok=aim.filter(t=>t.angle_err_deg!=null);h+="<p><b>B · დამიზნება:</b> მედ. გაშვება "+Math.round(q(aim.map(t=>t.release_rt_ms),.5))+" ms, კუთხის აცდენა მედ. "+(ok.length?q(ok.map(t=>t.angle_err_deg),.5):"—")+"°, ზედმეტად მოკლე "+aim.filter(t=>t.too_short).length+"/"+aim.length+"</p>"}
   const sw=T.filter(t=>t.type==="swipe");if(sw.length)h+="<p><b>C · გადასრიალება:</b> მედ. "+Math.round(q(sw.map(t=>t.swipe_ms),.5))+" ms, წარმატება "+pct(sw.filter(t=>t.start_ok&&t.end_ok).length,sw.length)+"</p>";
   const ch=T.filter(t=>t.type==="chain");if(ch.length){const iv=ch.flatMap(t=>t.intervals_ms);h+="<p><b>D · ჯაჭვი:</b> პირველი დაჭერა მედ. "+Math.round(q(ch.map(t=>t.first_rt_ms),.5))+" ms, დაჭერებს შორის მედ. "+Math.round(q(iv,.5))+" ms, მთლიანი მედ. "+Math.round(q(ch.map(t=>t.total_ms),.5))+" ms, უშეცდომო "+pct(ch.filter(t=>t.all_ok).length,ch.length)+"</p>"}
+  const fk=T.filter(t=>t.block==="flk");if(fk.length){h+="<p><b>F · Flicker↔ულტი</b></p><table><tr><th>განლაგება</th><th>n</th><th>უშეცდომო</th><th>Flicker↔ულტი გადასვლა მედ. ms</th><th>ჯაჭვი მთლიანად მედ. ms</th></tr>";
+    ["Kalea","Kalea-v2A"].forEach(sc=>{const a=fk.filter(t=>t.scene===sc);if(!a.length)return;const tr=[];a.forEach(t=>{for(let i=1;i<t.seq.length;i++){const x=t.seq[i-1],y=t.seq[i];if((x==="spell"&&y==="ult")||(x==="ult"&&y==="spell"))tr.push(t.intervals_ms[i-1])}});
+      h+="<tr><td>"+(sc==="Kalea"?"HUD-v1 (ახლანდელი)":"v2A (Flicker ულტთან)")+"</td><td>"+a.length+"</td><td>"+pct(a.filter(t=>t.all_ok).length,a.length)+"</td><td>"+Math.round(q(tr,.5))+"</td><td>"+Math.round(q(a.map(t=>t.total_ms),.5))+"</td></tr>"});h+="</table>"}
   const lk=T.filter(t=>t.block==="lock");if(lk.length){const same=tap.filter(t=>["atk","s1","s2","ult","spell"].includes(t.target));
     h+="<p><b>E · Hero-lock ფონი:</b> მოხვდა "+pct(lk.filter(t=>t.hit).length,lk.length)+", lock-პორტრეტზე დაეცა "+lk.filter(t=>t.on_lock>=0).length+"/"+lk.length+", მედ. "+Math.round(q(lk.map(t=>t.rt_ms),.5))+" ms"+(same.length?" (სუფთა ფონზე იგივე ღილაკები: "+Math.round(q(same.map(t=>t.rt_ms),.5))+" ms, "+pct(same.filter(t=>t.hit).length,same.length)+")":"")+"</p>"}
-  h+="<p class='st'>შენიშვნა: ტესტი Claude-ის აპში უფრო პატარა ეკრანზეა (მასშტაბი "+(DB.blocks.length?DB.blocks[DB.blocks.length-1].scale:"?")+"), ამიტომ ms თამაშს პირდაპირ არ შეედრება — ვადარებთ HUD-v1-ს HUD-v2-ს იმავე პირობებში (წ11).</p></div>";$("report").innerHTML=h}
+  h+="<p class='st'>შენიშვნა: ms ლაბორატორიისაა (60 Hz ვები) — თამაშის ms-ს პირდაპირ არ შეედრება; ვადარებთ განლაგებებს იმავე პირობებში (წ11).</p></div>";$("report").innerHTML=h}
 $("b_rep").onclick=report;
 const dump=()=>JSON.stringify(DB);
 $("b_copy").onclick=async()=>{try{await navigator.clipboard.writeText(dump());$("saved").textContent="დაკოპირდა ✓"}catch(e){$("saved").textContent="კოპირება ვერ მოხერხდა — JSON ტექსტად"}};
