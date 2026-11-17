@@ -74,7 +74,7 @@ function panelScene(img,hero,f,fs){const b={};for(const k in BASE_BTN){const o=B
 SCENES.panelBig=panelScene("hud_panel_big.jpg","panel-big",(x,y)=>[2460-(2460-x)*1.25,y*1.25],1.25);
 SCENES.panelLow=panelScene("hud_panel_low.jpg","panel-low",(x,y)=>[x,y+130],1);
 /* საბაზისო ხაზი (ფაზა 0/1, სრული ეკრანი, 17.11) */
-const VERSION="v3.9 · 17.11 09:40";
+const VERSION="v4.0 · 17.11 10:40";
 const BASELINE={react_ms:345,index_ms:717,thumb_ms:601,flicker_press_ms:678,combo_total_ms:2638,angle_deg:5.4,gesture_ok:0.96};
 /* გიორგის კომბოები (17.11.2026, ✅ გიორგი). dir = სლაიდი, tap = ტაპი, f = „&“ (სწრაფად), wait = განზრახ მოლოდინი */
 const COMBOS=[
@@ -143,7 +143,13 @@ const THR={slow:{n:"ნელი სკილშოტი",sh:"line",w:44,T0:800
   h_atlas:{n:"Atlas · Fatal Links (0.32 წმ ✅)",sh:"circle",R:115,T0:320,fixed:1,hero:"atlas"},
   h_yuzhong:{n:"Yu Zhong · Black Dragon Form (0.48 წმ ✅)",sh:"line",w:46,T0:480,from:1,fixed:1,hero:"yu-zhong"},
   h_pharsa:{n:"Pharsa · Wings by Wings (0.78 წმ ✅)",sh:"circle",R:95,T0:780,fixed:1,hero:"pharsa"},
-  h_tigreal:{n:"Tigreal · Implosion (1.07 წმ ✅)",sh:"circle",R:115,T0:1070,fixed:1,hero:"tigreal"}};
+  h_tigreal:{n:"Tigreal · Implosion (1.07 წმ ✅)",sh:"circle",R:115,T0:1070,fixed:1,hero:"tigreal"},
+  /* 📹 Giorgi-ს ვიდეოდან (17.11), t = პირველი ხილული ნიშანი → ეფექტი. მყისიერები (Saber/Gloo/Belerick ult/Eudora S2 <0.30) დოჯში არ შედის — წინასწარი პოზიციაა */
+  h_obsidia:{n:"Obsidia · Hunt of Bone (0.33 წმ 📹)",sh:"line",w:40,T0:330,fixed:1,hero:"obsidia"},
+  h_belerick1:{n:"Belerick · Ancient Seed (0.33 წმ 📹)",sh:"line",w:44,T0:330,fixed:1,hero:"belerick"},
+  h_masha:{n:"Masha · Savage Maul (0.43 წმ 📹)",sh:"circle",R:70,T0:430,fixed:1,hero:"masha"},
+  h_marcel:{n:"Marcel · Golden Hour (0.90 წმ 📹)",sh:"circle",R:130,T0:900,fixed:1,hero:"marcel"},
+  h_carmilla:{n:"Carmilla · Curse of Blood (0.93 წმ 📹)",sh:"circle",R:130,T0:930,fixed:1,hero:"carmilla"}};
 const SVGNS="http://www.w3.org/2000/svg";
 function svg(){const s=document.createElementNS(SVGNS,"svg");s.setAttribute("width",innerWidth);s.setAttribute("height",innerHeight);s.style.cssText="position:absolute;left:0;top:0;pointer-events:none";$("ov").appendChild(s);return s}
 function sv(p,tag,attrs){const e=document.createElementNS(SVGNS,tag);for(const k in attrs)e.setAttribute(k,attrs[k]);p.appendChild(e);return e}
@@ -440,7 +446,7 @@ function diagnose(s){const out=[];const BASE={d1:330,d3:BASELINE.index_ms,d2:BAS
     if(n>=10&&((s1-s2)>=.2||(m1&&m2&&m2>m1*1.15)))tag("AD-6","დაღლილობით ვარდნა",`1-ლი ნახევარი ${Math.round(s1*100)}% → მე-2 ${Math.round(s2*100)}%`+(s.fatigue?` · დაღლილობა ${s.fatigue}/5`:""),"შემდეგ ჯერზე მოკლე სესია ან შესვენება");});
   return out}
 /* ============ საწყისი გვერდი / პროგრესი ============ */
-const CARDS=[["d1","D1 · დოჯი (12 ტიპი + 4 ნამდვილი გმირი)","Atlas/Yu Zhong/Pharsa/Tigreal ულტები შენი გაზომილი დროით. სკილშოტები, არეალები, კონუსი, დეში, BA-ის ზონა, ორი ზედიზედ, ფეიკი, ბურსტი, Conceal-ით გაქცევა. ფეხით / S2 / Flicker / Frozen / Conceal — ზედმეტ ხარჯვას ითვლის."],["d2","D2 · კომბოები სიტუაციაში","შენი 9 კომბო: გმირი მართლა გადაადგილდება, სლაიდი სიტუაციის მიხედვით (შენიანები, ბეატრისის ზონა, დაბალი HP, დაცვა, გაქცეული მტერი)."],["d3","D3 · საჩვენებელი თითები","ორივე ცერა დაჭერილია, საჩვენებელით $/KDA/სიგნალები/მინიმაპი."],["d4","D4 · კამერის გაყინვა დატვირთვაში","საჩვენებელი კადრს აშეშებს (მინიმაპი ან თავისუფალი ზონა), ამ დროს ცერები სწრაფად მუშაობენ: ჯოისტიკის ისრები + სკილის რგოლები. 3→9 წმ, ტემპი ჩქარდება. ზომავს overflow-ს: რამდენს ცურავს საჩვენებელი ცერების გამო."]];
+const CARDS=[["d1","D1 · დოჯი (12 ტიპი + 9 ნამდვილი სკილი)","Atlas, Yu Zhong, Pharsa, Tigreal, Obsidia, Belerick S1, Masha, Marcel, Carmilla — გაზომილი დროით. სკილშოტები, არეალები, კონუსი, დეში, BA-ის ზონა, ორი ზედიზედ, ფეიკი, ბურსტი, Conceal-ით გაქცევა. ფეხით / S2 / Flicker / Frozen / Conceal — ზედმეტ ხარჯვას ითვლის."],["d2","D2 · კომბოები სიტუაციაში","შენი 9 კომბო: გმირი მართლა გადაადგილდება, სლაიდი სიტუაციის მიხედვით (შენიანები, ბეატრისის ზონა, დაბალი HP, დაცვა, გაქცეული მტერი)."],["d3","D3 · საჩვენებელი თითები","ორივე ცერა დაჭერილია, საჩვენებელით $/KDA/სიგნალები/მინიმაპი."],["d4","D4 · კამერის გაყინვა დატვირთვაში","საჩვენებელი კადრს აშეშებს (მინიმაპი ან თავისუფალი ზონა), ამ დროს ცერები სწრაფად მუშაობენ: ჯოისტიკის ისრები + სკილის რგოლები. 3→9 წმ, ტემპი ჩქარდება. ზომავს overflow-ს: რამდენს ცურავს საჩვენებელი ცერების გამო."]];
 function render(){const c=$("cards");c.innerHTML="";fsCheck();CARDS.forEach(([id,n,sub])=>{const S=DB.sessions.flatMap(s=>s.drills).filter(d=>d.drill===id&&d.summary);const last=S[S.length-1];
   const d=document.createElement("div");d.className="card";d.innerHTML="<b>"+n+"</b><small>"+sub+"</small><span class='st'>"+(last?"ბოლო: "+line(id,last.summary):"ჯერ არა")+" · სესია "+S.length+"</span>";
   const b=document.createElement("button");b.textContent="▶";b.className="go";b.style.float="right";b.onclick=()=>{if($("pain").value>=2&&!confirm("დისკომფორტი 2+ — მაინც გავაგრძელო?"))return;newSession([id])};d.appendChild(b);c.appendChild(d)});histTable()}
