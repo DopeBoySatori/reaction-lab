@@ -74,7 +74,7 @@ function panelScene(img,hero,f,fs){const b={};for(const k in BASE_BTN){const o=B
 SCENES.panelBig=panelScene("hud_panel_big.jpg","panel-big",(x,y)=>[2460-(2460-x)*1.25,y*1.25],1.25);
 SCENES.panelLow=panelScene("hud_panel_low.jpg","panel-low",(x,y)=>[x,y+130],1);
 /* საბაზისო ხაზი (ფაზა 0/1, სრული ეკრანი, 17.11) */
-const VERSION="v3.8 · 17.11 09:20";
+const VERSION="v3.9 · 17.11 09:40";
 const BASELINE={react_ms:345,index_ms:717,thumb_ms:601,flicker_press_ms:678,combo_total_ms:2638,angle_deg:5.4,gesture_ok:0.96};
 /* გიორგის კომბოები (17.11.2026, ✅ გიორგი). dir = სლაიდი, tap = ტაპი, f = „&“ (სწრაფად), wait = განზრახ მოლოდინი */
 const COMBOS=[
@@ -137,7 +137,13 @@ const THR={slow:{n:"ნელი სკილშოტი",sh:"line",w:44,T0:800
   dash:{n:"მტრის დეში შენზე",sh:"line",w:40,T0:420,from:1},ba:{n:"BA-ის ზონა — დაიჭირე დისტანცია",sh:"ba",R:85,T0:700},
   dbl:{n:"ორი ზედიზედ (სკილშოტი → არეალი)",sh:"line",w:34,T0:600,dbl:1},fake:{n:"ფეიკი? (შეიძლება გაუქმდეს)",sh:"line",w:44,T0:800,fake:1},
   burst:{n:"აუცილებელი ბურსტი — ვერ გაექცევი",sh:"circle",R:175,T0:750,burst:1},
-  conceal:{n:"გაქცევა Conceal-ით (არა BA-ის მომენტში, არა წვისას)",sh:"ba",R:85,T0:900,conceal:1}};
+  conceal:{n:"გაქცევა Conceal-ით (არა BA-ის მომენტში, არა წვისას)",sh:"ba",R:85,T0:900,conceal:1},
+  /* Threat Library (J-3/J-8): ნამდვილი გმირები, ანიმაციის დრო = Giorgi-ს გაზომვა Practice Mode-ში ✅ (ფიქსირებული, არ ადაპტირდება). ფორმა/რადიუსი 🟡 მიახლოებითი.
+     Odette ult 0.03 წმ — რეაქციით შეუძლებელია (კლასი „წინასწარ“) → დოჯში არ შედის. Franco — სკილი დასაზუსტებელი, არ შედის. სინქრონი: mlbb-v2/raw/threat-measurements.json */
+  h_atlas:{n:"Atlas · Fatal Links (0.32 წმ ✅)",sh:"circle",R:115,T0:320,fixed:1,hero:"atlas"},
+  h_yuzhong:{n:"Yu Zhong · Black Dragon Form (0.48 წმ ✅)",sh:"line",w:46,T0:480,from:1,fixed:1,hero:"yu-zhong"},
+  h_pharsa:{n:"Pharsa · Wings by Wings (0.78 წმ ✅)",sh:"circle",R:95,T0:780,fixed:1,hero:"pharsa"},
+  h_tigreal:{n:"Tigreal · Implosion (1.07 წმ ✅)",sh:"circle",R:115,T0:1070,fixed:1,hero:"tigreal"}};
 const SVGNS="http://www.w3.org/2000/svg";
 function svg(){const s=document.createElementNS(SVGNS,"svg");s.setAttribute("width",innerWidth);s.setAttribute("height",innerHeight);s.style.cssText="position:absolute;left:0;top:0;pointer-events:none";$("ov").appendChild(s);return s}
 function sv(p,tag,attrs){const e=document.createElementNS(SVGNS,tag);for(const k in attrs)e.setAttribute(k,attrs[k]);p.appendChild(e);return e}
@@ -145,7 +151,7 @@ function D1(){enter("kalea");DB.adapt.d1w=DB.adapt.d1w||{};const KEYS=Object.key
   const SPEED=110,DEAD=6,FULL=26,HR=11,FLICK=150,RT_EST=0.3;
   const plan=shuffle(Array.from({length:N},(_,i)=>KEYS[i%KEYS.length]));
   ready("D1 · დოჯი: მარცხენა ცერა — მოძრაობა. ფეხით ვერ ასწრებ → S2 (გმირის დეში) ან Flicker, სლაიდით. ფეიკზე Flicker არ დახარჯო. გაქცევა შეუძლებელია → Frozen (ლურჯი ღილაკი)",false,go);
-  function W(key){return DB.adapt.d1w[key]||THR[key].T0}
+  function W(key){return THR[key].fixed?THR[key].T0:(DB.adapt.d1w[key]||THR[key].T0)}
   function frozenBtn(lbl){const b=SC.btn.active,p=toS(b),r=b.r*G.s;const d=el("ring",p.x-r,p.y-r);d.style.width=d.style.height=2*r+"px";d.style.borderColor="#7fb8ff";d.style.boxShadow="0 0 10px #7fb8ff";d.style.background="rgba(60,110,220,.45)";el("lbl",p.x,p.y+r+18,lbl||"Frozen")}
   function go(){cancelAnimationFrame(raf);clear();const key=plan[k];frozenBtn(THR[key].conceal?"Conceal":"Frozen");$("prog").textContent="D1 "+(k+1)+"/"+N+" · "+THR[key].n+" · "+Math.round(W(key))+" ms";const h=toS(HERO);
     let calm=0;const wait=()=>{if(!RUN||RUN.stopped)return;const j=joyTouch();if(!j){msg("დაადე მარცხენა ცერა ჯოისტიკზე");setTimeout(wait,120);return}
@@ -209,7 +215,7 @@ function D1(){enter("kalea");DB.adapt.d1w=DB.adapt.d1w||{};const KEYS=Object.key
     cur.done=true;cancelAnimationFrame(raf);clearTimeout(cur.timer);
     const usedF=!!cur.flick;let ok=th.conceal?!!(cur.cc&&cur.cc.ok):cur.geo.t==="ba"?cur.hits===0:(!inside()&&!cur.stage1hit);if(cur.frozen&&!ok&&cur.geo.t!=="ba")ok=true;if(cur.cancelled)ok=!usedF&&!cur.frozen;const frozenWasted=!!cur.frozen&&!th.burst;const wasted=usedF&&(cur.walkOK||cur.cancelled)&&(cur.cancelled||ok);
     tr.push({k:cur.k,type:cur.key,conceal:cur.cc||null,burning:!!cur.burnUntil,frozen:cur.frozen||null,frozen_wasted:frozenWasted,fake_cancelled:!!cur.cancelled,dash:cur.dash||null,ok,why:ok?"ok":(cur.cancelled?"flicker_on_fake":(cur.onset==null?"no_move":"hit")),onset_ms:r1(cur.onset),anticipation:cur.onset!=null&&cur.onset<120,window_ms:Math.round(cur.T),walk_possible:cur.walkOK,flicker:cur.flick,flicker_wasted:wasted,ba_hits:cur.geo.t==="ba"?cur.hits:null});
-    const w=W(cur.key),last=tr.filter(x=>x.type===cur.key).slice(-2);if(ok&&last.length===2&&last.every(x=>x.ok))DB.adapt.d1w[cur.key]=Math.max(200,w*0.92);else if(!ok)DB.adapt.d1w[cur.key]=Math.min(1600,w*1.12);
+    const w=W(cur.key),last=tr.filter(x=>x.type===cur.key).slice(-2);if(THR[cur.key].fixed){}else if(ok&&last.length===2&&last.every(x=>x.ok))DB.adapt.d1w[cur.key]=Math.max(200,w*0.92);else if(!ok)DB.adapt.d1w[cur.key]=Math.min(1600,w*1.12);
     const txt=th.conceal?(ok?"✓ Conceal — გაქრი, BA ვეღარ გარტყამს · "+Math.round(cur.cc.at)+" ms":(cur.cc&&cur.cc.removed?"✗ Conceal ჩამოგეხსნა ("+(cur.cc.removed==="burn"?"წვა":"BA-ის მომენტი")+") — დაელოდე წვის დასრულებას / BA-ებს შორის დააჭირე":"✗ Conceal არ გამოიყენე")):th.burst?(ok?(cur.frozen?"✓ Frozen — გადარჩი · "+Math.round(cur.frozen.at)+" ms":"✓ გადარჩი"):"✗ ბურსტი მოგხვდა — აქ Frozen სჭირდებოდა"):cur.cancelled?(ok?"✓ ფეიკი იყო — Flicker შეინახე":"✗ ფეიკი იყო — Flicker ტყუილად დახარჯე"):ok?("✓ გადარჩი"+(cur.onset!=null?" · "+Math.round(cur.onset)+" ms":"")+(wasted?" · ⚠ Flicker ზედმეტი იყო (ფეხითაც ასწრებდი)":"")):(cur.geo.t==="ba"?"✗ BA მოგხვდა "+cur.hits+"-ჯერ":(cur.onset==null?"✗ არ გაინძერი":(!cur.walkOK&&!usedF?"✗ მოგხვდა — ფეხით ვერ ასწრებდი, Flicker სჭირდებოდა":"✗ მოგხვდა")));
     msg(txt+(frozenWasted?" · ⚠ Frozen ზედმეტად დახარჯე (გრძელი გადატვირთვა)":""),"");cur=null;k++;setTimeout(()=>{msg("");if(!RUN)return;if(k>=N)fin(false);else go()},1100)}
   function fin(st){cancelAnimationFrame(raf);const ok=tr.filter(x=>x.ok),by={};tr.forEach(x=>{(by[x.type]=by[x.type]||[]).push(x.ok)});
@@ -434,7 +440,7 @@ function diagnose(s){const out=[];const BASE={d1:330,d3:BASELINE.index_ms,d2:BAS
     if(n>=10&&((s1-s2)>=.2||(m1&&m2&&m2>m1*1.15)))tag("AD-6","დაღლილობით ვარდნა",`1-ლი ნახევარი ${Math.round(s1*100)}% → მე-2 ${Math.round(s2*100)}%`+(s.fatigue?` · დაღლილობა ${s.fatigue}/5`:""),"შემდეგ ჯერზე მოკლე სესია ან შესვენება");});
   return out}
 /* ============ საწყისი გვერდი / პროგრესი ============ */
-const CARDS=[["d1","D1 · დოჯი (12 ტიპი)","სკილშოტები, არეალები, კონუსი, დეში, BA-ის ზონა, ორი ზედიზედ, ფეიკი, ბურსტი, Conceal-ით გაქცევა. ფეხით / S2 / Flicker / Frozen / Conceal — ზედმეტ ხარჯვას ითვლის."],["d2","D2 · კომბოები სიტუაციაში","შენი 9 კომბო: გმირი მართლა გადაადგილდება, სლაიდი სიტუაციის მიხედვით (შენიანები, ბეატრისის ზონა, დაბალი HP, დაცვა, გაქცეული მტერი)."],["d3","D3 · საჩვენებელი თითები","ორივე ცერა დაჭერილია, საჩვენებელით $/KDA/სიგნალები/მინიმაპი."],["d4","D4 · კამერის გაყინვა დატვირთვაში","საჩვენებელი კადრს აშეშებს (მინიმაპი ან თავისუფალი ზონა), ამ დროს ცერები სწრაფად მუშაობენ: ჯოისტიკის ისრები + სკილის რგოლები. 3→9 წმ, ტემპი ჩქარდება. ზომავს overflow-ს: რამდენს ცურავს საჩვენებელი ცერების გამო."]];
+const CARDS=[["d1","D1 · დოჯი (12 ტიპი + 4 ნამდვილი გმირი)","Atlas/Yu Zhong/Pharsa/Tigreal ულტები შენი გაზომილი დროით. სკილშოტები, არეალები, კონუსი, დეში, BA-ის ზონა, ორი ზედიზედ, ფეიკი, ბურსტი, Conceal-ით გაქცევა. ფეხით / S2 / Flicker / Frozen / Conceal — ზედმეტ ხარჯვას ითვლის."],["d2","D2 · კომბოები სიტუაციაში","შენი 9 კომბო: გმირი მართლა გადაადგილდება, სლაიდი სიტუაციის მიხედვით (შენიანები, ბეატრისის ზონა, დაბალი HP, დაცვა, გაქცეული მტერი)."],["d3","D3 · საჩვენებელი თითები","ორივე ცერა დაჭერილია, საჩვენებელით $/KDA/სიგნალები/მინიმაპი."],["d4","D4 · კამერის გაყინვა დატვირთვაში","საჩვენებელი კადრს აშეშებს (მინიმაპი ან თავისუფალი ზონა), ამ დროს ცერები სწრაფად მუშაობენ: ჯოისტიკის ისრები + სკილის რგოლები. 3→9 წმ, ტემპი ჩქარდება. ზომავს overflow-ს: რამდენს ცურავს საჩვენებელი ცერების გამო."]];
 function render(){const c=$("cards");c.innerHTML="";fsCheck();CARDS.forEach(([id,n,sub])=>{const S=DB.sessions.flatMap(s=>s.drills).filter(d=>d.drill===id&&d.summary);const last=S[S.length-1];
   const d=document.createElement("div");d.className="card";d.innerHTML="<b>"+n+"</b><small>"+sub+"</small><span class='st'>"+(last?"ბოლო: "+line(id,last.summary):"ჯერ არა")+" · სესია "+S.length+"</span>";
   const b=document.createElement("button");b.textContent="▶";b.className="go";b.style.float="right";b.onclick=()=>{if($("pain").value>=2&&!confirm("დისკომფორტი 2+ — მაინც გავაგრძელო?"))return;newSession([id])};d.appendChild(b);c.appendChild(d)});histTable()}
