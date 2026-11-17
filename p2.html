@@ -74,7 +74,7 @@ function panelScene(img,hero,f,fs){const b={};for(const k in BASE_BTN){const o=B
 SCENES.panelBig=panelScene("hud_panel_big.jpg","panel-big",(x,y)=>[2460-(2460-x)*1.25,y*1.25],1.25);
 SCENES.panelLow=panelScene("hud_panel_low.jpg","panel-low",(x,y)=>[x,y+130],1);
 /* საბაზისო ხაზი (ფაზა 0/1, სრული ეკრანი, 17.11) */
-const VERSION="v4.6 · 17.11 18:30";
+const VERSION="v4.7 · 17.11 19:30";
 const BASELINE={react_ms:345,index_ms:717,thumb_ms:601,flicker_press_ms:678,combo_total_ms:2638,angle_deg:5.4,gesture_ok:0.96};
 /* გიორგის კომბოები (17.11.2026, ✅ გიორგი). dir = სლაიდი, tap = ტაპი, f = „&“ (სწრაფად), wait = განზრახ მოლოდინი */
 const COMBOS=[
@@ -445,51 +445,74 @@ function D5(){enter("kalea");const A=DB.adapt;if(A.d5_T==null)A.d5_T=2500;const 
     const wrong=tr.filter(x=>!x.ok).map(x=>x.hero+" "+x.slot);rec.summary={n:tr.length,success:tr.length?r1(tr.filter(x=>x.ok).length/tr.length*100):null,rt_med:r1(q(tr.filter(x=>x.ok).map(x=>x.rt_ms),.5)),by_class:by,wrong,window_end:Math.round(A.d5_T)};drillDone(rec,st)}
   RUN={on,finish:fin}}
 
-/* ============ D6 · მაღაზიის სვოპი (G-6, RT-039/040/041/043): Immortality → Winter Crown → Rose Gold Meteor ============
-   ✅ Giorgi 17.11: Immortality-ით სიკვდილისას აღდგომამდე გაყიდე → იყიდე Winter Crown; Frozen-ის ჩართვისთანავე გაყიდე → იყიდე Rose Gold Meteor (ეფექტი გაყიდვის შემდეგაც მუშაობს).
-   ✅ Moonton: აღდგომა 2.5 წმ; Frozen 2 წმ. 🟡 მაღაზიის განლაგება მიახლოებითია (არა MLBB-ის ზუსტი ეკრანი); ოქრო არ მოდელირდება (საკმარისად ითვლება). */
-const SHOP_TABS={"შეტევა":["Blade of Despair","Rose Gold Meteor","Hunter Strike","Malefic Roar","Haas's Claws","Sea Halberd"],"მაგია":["Winter Crown","Holy Crystal","Genius Wand","Glowing Wand","Clock of Destiny","Lightning Truncheon"],"დაცვა":["Immortality","Antique Cuirass","Dominance Ice","Athena's Shield","Radiant Armor","Guardian Helmet"],"მოძრაობა":["Tough Boots","Warrior Boots","Rapid Boots","Magic Shoes","Arcane Boots","Swift Boots"]};
-const INV0=["Tough Boots","Dominance Ice","Antique Cuirass","Athena's Shield","Radiant Armor"];
-function D6(){enter("kalea");const N=SESSION.mode==="warm"?3:6,tr=[];let k=0,c=null;const rec={drill:"d6",name:"D6 · მაღაზიის სვოპი",ver:1,trials:tr,revive_ms:2500,frozen_ms:2000};
-  ready("D6 · ☠ Immortality-ით მოკვდი → აღდგომამდე (2.5 წმ): მაღაზია → გაყიდე Immortality → იყიდე Winter Crown. მერე ბურსტზე: Frozen → მაშინვე გაყიდე Winter Crown → იყიდე Rose Gold Meteor (2 წმ)",false,go);
-  function inv(){return c.inv}
-  function draw(){const ov=$("ov");[...ov.querySelectorAll(".shopx")].forEach(x=>x.remove());if(!c)return;const W=innerWidth,H=innerHeight;
-    if(c.overlay){const d=document.createElement("div");d.className="shopx";d.style.cssText="position:absolute;left:0;top:0;width:"+W+"px;height:"+H+"px;background:"+(c.overlay==="dead"?"rgba(60,60,60,.55)":"rgba(120,190,255,.25)")+";pointer-events:none";ov.appendChild(d)}
-    if(!c.open)return;const P=document.createElement("div");P.className="shopx";P.style.cssText="position:absolute;left:"+W*0.08+"px;top:"+H*0.06+"px;width:"+W*0.84+"px;height:"+H*0.86+"px;background:#141a24;border:2px solid #c9a646;border-radius:10px;font:600 13px system-ui;color:#eee;display:grid;grid-template-columns:18% 52% 30%;gap:6px;padding:8px;box-sizing:border-box";
-    const col=(html)=>{const d=document.createElement("div");d.style.cssText="display:flex;flex-direction:column;gap:6px;overflow:hidden";d.innerHTML=html;return d};
-    const btn=(k2,t,on,st="")=>`<div data-k="${k2}" style="padding:8px 6px;border-radius:7px;background:${on?"#c9a646;color:#000":"#263040"};text-align:center;${st}">${t}</div>`;
-    P.appendChild(col(Object.keys(SHOP_TABS).map(t=>btn("tab:"+t,t,c.tab===t)).join("")+btn("close","✕ დახურვა",false,"margin-top:auto;background:#5a2a2a")));
-    const g=col("");g.style.cssText+=";display:grid;grid-template-columns:1fr 1fr;align-content:start";g.innerHTML=SHOP_TABS[c.tab].map(n=>btn("item:"+n,n,c.sel===n&&c.selFrom==="shop","min-height:34px")).join("");P.appendChild(g);
-    const own=c.inv.map((n,i)=>btn("inv:"+i,n||"—",c.sel===n&&c.selFrom==="inv"&&n,"min-height:26px;font-size:12px")).join("");
-    const act=c.sel?(c.selFrom==="inv"?btn("sell","გაყიდვა: "+c.sel,false,"background:#7a3b1d;margin-top:auto"):btn("buy","ყიდვა: "+c.sel,false,"background:#2b6b33;margin-top:auto")):"";
-    P.appendChild(col("<div style='opacity:.7'>შენი ნივთები</div>"+own+act));ov.appendChild(P)}
-  function hit(x,y){for(const d of $("ov").querySelectorAll("[data-k]")){const r=d.getBoundingClientRect();if(x>=r.left&&x<=r.right&&y>=r.top&&y<=r.bottom)return d.dataset.k}return null}
-  function go(){clear();const inv=INV0.slice();inv.splice(Math.floor(RNG()*6),0,"Immortality");
-    c={phase:"A",inv,open:false,tab:"შეტევა",sel:null,selFrom:null,overlay:"dead",t0:now(),ev:[],mis:0,A_ok:false,B_ok:false};
-    $("prog").textContent="D6 "+(k+1)+"/"+N;msg("☠ მოკვდი — აღდგომა 2.5 წმ","მაღაზია → გაყიდე Immortality → იყიდე Winter Crown");ring(SC.btn.shop,"$");draw();
-    c.tA=setTimeout(revive,2500)}
-  function revive(){if(!c)return;c.A_ok=c.inv.includes("Winter Crown")&&!c.inv.includes("Immortality");c.A_ms=c.A_ok?c.boughtA-c.t0:null;c.open=false;c.sel=null;c.overlay=null;c.phase="B0";clear();draw();
-    msg(c.A_ok?"✓ აღდექი Winter Crown-ით":"✗ ვერ მოასწარი — Winter Crown არ გაქვს",c.A_ok?"მოემზადე: ბურსტი მოდის…":"");if(!c.A_ok){setTimeout(()=>fin1(),1200);return}
+/* ============ D6 v2 · მაღაზიის სვოპი — ნამდვილი MLBB მაღაზია (G-6, RT-039/040/041/043) ============
+   Giorgi 17.11: გენერირებული ტექსტით არ გამოდგება → ზუსტი ინტერფეისი. ფონი = Giorgi-ს სქრინი (2796×1290 = iPhone ეკრანი 1:1), სიები = Giorgi-ს ვიდეოდან (03:07) აწყობილი Simple Mode ტაბები, სქროლი თითით.
+   ✅ Moonton: აღდგომა 2.5 წმ, Frozen 2 წმ. 🟡 Movement ტაბი და ნივთის დეტალების პანელი სქრინიდან არ გვაქვს; ოქრო არ მოდელირდება. */
+const SHOP={W:2796,H:1290,list:[575,175,845,875],
+  tabs:{rec:{y:221,img:"shop_rec.jpg",h:875},att:{y:352,img:"shop_att.jpg",h:2429},mag:{y:484,img:"shop_mag.jpg",h:2009},def:{y:615,img:"shop_def.jpg",h:1773},mov:{y:745,img:null,h:875}},
+  grid:{att:["Demon Hunter Sword","Corrosion Scythe","Golden Staff","Wind of Nature","War Axe","Sky Piercer","Fleeting Time","Winter Crown","Malefic Roar","Haas' Claws","Berserker's Fury","Endless Battle","Windtalker","Blade of the Heptaseas","Blade of Despair","Hunter Strike","Rose Gold Meteor","Sea Halberd","Great Dragon Spear","Malefic Gun","Power Potion"],
+    mag:["Enchanted Talisman","Feather of Heaven","Clock of Destiny","Sky Piercer","Fleeting Time","Winter Crown","Divine Glaive","Holy Crystal","Concentrated Energy","Ice Queen Wand","Glowing Wand","Starlium Scythe","Blood Wings","Lightning Truncheon","Genius Wand","Flask of the Oasis","Wishing Lantern","Magic Potion"],
+    def:["Blade Armor","Queen's Wings","Thunder Belt","Cursed Helmet","Guardian Helmet","Antique Cuirass","Oracle","Valkyrie's Shield","Dominance Ice","Immortality","Brute Force Breastplate","Chastise Pauldron","Radiant Armor","Fleeting Time","Rock Potion"]},
+  rec:[["Flame Hunter's Magic Boots",110,63],["Hunter Strike",513,63],["Sky Piercer",114,279],["War Axe",513,279],["Malefic Roar",114,503],["Blade of Despair",513,503],["Immortality",109,748],["Winter Crown",506,748]],
+  slots:[672,801,931,1060,1190,1319],slotY:1144,buy:[2129,1111,2475,1195],sellAll:[1514,1111,1846,1195],close:[2432,133],shopBtn:{x:2345,y:55}};
+SHOP.items=(()=>{const o=[];for(const t of ["att","mag","def"])SHOP.grid[t].forEach((n,i)=>o.push({t,n,cx:i%2?516:114,cy:105+217.5*Math.floor(i/2)}));SHOP.rec.forEach(r=>o.push({t:"rec",n:r[0],cx:r[1],cy:r[2]}));return o})();
+const iconOf=n=>SHOP.items.find(x=>x.n===n&&x.t!=="rec")||SHOP.items.find(x=>x.n===n);
+function D6(){enter("kalea");const N=SESSION.mode==="warm"?3:6,tr=[];let k=0,c=null,root=null,inner=null,sc=1;const rec={drill:"d6",name:"D6 · მაღაზიის სვოპი (ნამდვილი UI)",ver:2,trials:tr,revive_ms:2500,frozen_ms:2000};
+  ready("D6 · ☠ Immortality-ით მოკვდი → 2.5 წმ-ში: მაღაზია → გაყიდე Immortality → იყიდე Winter Crown. ❄ ბურსტზე Frozen → 2 წმ-ში: გაყიდე Winter Crown → იყიდე Rose Gold Meteor. სიაში სქროლი თითით",false,go);
+  const D=(tag,css,par)=>{const d=document.createElement(tag||"div");d.style.cssText="position:absolute;"+css;(par||inner).appendChild(d);return d};
+  function mount(){unmount();const a=toS({x:0,y:0}),b=toS({x:IW,y:IH});sc=(b.x-a.x)/SHOP.W;
+    root=document.createElement("div");root.className="shopx";root.style.cssText="position:absolute;left:"+a.x+"px;top:"+a.y+"px;width:"+(b.x-a.x)+"px;height:"+(SHOP.H*sc)+"px;overflow:hidden;pointer-events:none";$("ov").appendChild(root);
+    inner=document.createElement("div");inner.style.cssText="position:absolute;left:0;top:0;width:"+SHOP.W+"px;height:"+SHOP.H+"px;transform:scale("+sc+");transform-origin:0 0;background:url(shop_bg.jpg) 0 0/100% 100%";root.appendChild(inner);render()}
+  function unmount(){if(root)root.remove();root=null;inner=null}
+  function render(){if(!inner)return;inner.querySelectorAll(".dyn").forEach(x=>x.remove());const L=SHOP.list,T=SHOP.tabs[c.tab];
+    const box=D("div","left:"+L[0]+"px;top:"+L[1]+"px;width:"+L[2]+"px;height:"+L[3]+"px;overflow:hidden;background:#1b2433");box.className="dyn";
+    if(T.img){const im=D("div","left:0;top:"+(-c.scroll)+"px;width:"+L[2]+"px;height:"+T.h+"px;background:url("+T.img+") 0 0/100% 100%",box)}else D("div","left:0;top:300px;width:100%;text-align:center;color:#8aa;font:600 34px system-ui","").textContent="";
+    if(c.sel&&c.selFrom==="shop"){const it=c.sel;if(it.t===c.tab){const r=D("div","left:"+(L[0]+it.cx-82)+"px;top:"+(L[1]+it.cy-82-c.scroll)+"px;width:164px;height:164px;border-radius:50%;border:7px solid #f3d27a;box-shadow:0 0 18px #f3d27a;box-sizing:border-box");r.className="dyn";if(it.cy-c.scroll<0||it.cy-c.scroll>L[3])r.style.display="none"}}
+    // ტაბის მონიშვნა
+    const tb=D("div","left:280px;top:"+(T.y-48)+"px;width:282px;height:96px;background:linear-gradient(90deg,rgba(80,140,220,.0),rgba(80,140,220,.35));border-right:6px solid #6fb0ff");tb.className="dyn";
+    // ინვენტარი
+    SHOP.slots.forEach((x,i)=>{const n=c.inv[i];if(!n)return;const ic=iconOf(n),T2=SHOP.tabs[ic.t],sx=SHOP.list[2]/845;const d=D("div","left:"+(x-58)+"px;top:"+(SHOP.slotY-58)+"px;width:116px;height:116px;border-radius:50%;background:url("+T2.img+") "+(-(ic.cx-58))+"px "+(-(ic.cy-62))+"px/"+SHOP.list[2]+"px "+T2.h+"px;"+(c.sel&&c.selFrom==="inv"&&c.selSlot===i?"box-shadow:0 0 0 7px #f3d27a,0 0 18px #f3d27a":""));d.className="dyn"});
+    // დეტალები + ღილაკი
+    if(c.sel){const dt=D("div","left:1505px;top:800px;width:1010px;height:305px;background:#1a2230;color:#fff;font:600 40px system-ui;padding:20px 30px;box-sizing:border-box");dt.className="dyn";dt.textContent=c.sel.n}
+    const bt=D("div","left:"+SHOP.buy[0]+"px;top:"+SHOP.buy[1]+"px;width:"+(SHOP.buy[2]-SHOP.buy[0])+"px;height:"+(SHOP.buy[3]-SHOP.buy[1])+"px;background:"+(c.sel?"#3c8de0":"#5c6470")+";color:#fff;font:500 46px system-ui;display:flex;align-items:center;justify-content:center;border-radius:6px");bt.className="dyn";bt.textContent=c.sel&&c.selFrom==="inv"?"Sell":"Purchase"}
+  const toShop=(cx,cy)=>{const r=root.getBoundingClientRect();return{x:(cx-r.left)/sc,y:(cy-r.top)/sc}};
+  const inR=(p,R)=>p.x>=R[0]&&p.x<=R[2]&&p.y>=R[1]&&p.y<=R[3];
+  function go(){clear();unmount();const inv=["Flame Hunter's Magic Boots","Dominance Ice","Antique Cuirass","Guardian Helmet","Oracle"];inv.splice(Math.floor(RNG()*6),0,"Immortality");
+    c={phase:"A",inv,open:false,tab:"rec",scroll:0,sel:null,selFrom:null,t0:now(),ev:[],mis:0,sellAll:0,scrollPx:0,A_ok:false,B_ok:false};
+    $("prog").textContent="D6 "+(k+1)+"/"+N;msg("☠ მოკვდი — აღდგომა 2.5 წმ","");ring(SC.btn.shop,"$");dim("rgba(60,60,60,.5)");c.tA=setTimeout(revive,2500)}
+  function dim(col){const d=el("ring",0,0);d.style.cssText="position:absolute;left:0;top:0;width:100%;height:100%;border:0;border-radius:0;box-shadow:none;background:"+col+";pointer-events:none"}
+  function revive(){if(!c)return;c.A_ok=c.inv.includes("Winter Crown")&&!c.inv.includes("Immortality");c.A_ms=c.A_ok?c.boughtA-c.t0:null;c.open=false;c.sel=null;unmount();clear();c.phase="B0";
+    msg(c.A_ok?"✓ აღდექი Winter Crown-ით":"✗ ვერ მოასწარი — Winter Crown არ გაქვს",c.A_ok?"მოემზადე: ბურსტი მოდის…":"");if(!c.A_ok){setTimeout(fin1,1200);return}
     setTimeout(()=>{if(!c)return;c.phase="B1";c.cue=now();msg("💥 ბურსტი! Frozen","");ring(SC.btn.active,"❄")},900+RNG()*1500)}
-  function frozen(HT){c.phase="B2";c.fz=HT;c.react=HT-c.cue;c.overlay="frozen";clear();ring(SC.btn.shop,"$");msg("❄ Frozen 2 წმ — გაყიდე Winter Crown → იყიდე Rose Gold Meteor","");draw();c.tB=setTimeout(()=>{if(!c)return;c.B_ok=c.inv.includes("Rose Gold Meteor")&&!c.inv.includes("Winter Crown");fin1()},2000)}
-  function on(kind,e,HT){if(!c||kind!=="down")return;for(const t of e.changedTouches){const p=toI(t.clientX,t.clientY);
-    if(c.phase==="B1"){if(dist(p,SC.btn.active)<=SC.btn.active.r*1.2)frozen(HT);else c.mis++;continue}
-    if(c.phase!=="A"&&c.phase!=="B2")continue;
-    if(!c.open){if(dist(p,SC.btn.shop)<=SC.btn.shop.r*1.25){c.open=true;c.ev.push(["open",HT]);clear();draw()}else c.mis++;continue}
-    const h=hit(t.clientX,t.clientY);if(!h){c.mis++;continue}
-    if(h==="close"){c.open=false;c.sel=null;clear();if(c.phase==="A")ring(SC.btn.shop,"$");draw();continue}
-    if(h.startsWith("tab:")){c.tab=h.slice(4);c.sel=null}
-    else if(h.startsWith("item:")){c.sel=h.slice(5);c.selFrom="shop"}
-    else if(h.startsWith("inv:")){const n=c.inv[+h.slice(4)];if(n){c.sel=n;c.selFrom="inv"}}
-    else if(h==="sell"){const want=c.phase==="A"?"Immortality":"Winter Crown";if(c.sel!==want)c.mis++;c.inv[c.inv.indexOf(c.sel)]=null;c.ev.push(["sell:"+c.sel,HT]);c.sel=null}
-    else if(h==="buy"){const want=c.phase==="A"?"Winter Crown":"Rose Gold Meteor";if(c.sel!==want)c.mis++;const i=c.inv.indexOf(null);if(i<0){msg("სლოტი სავსეა — ჯერ გაყიდე","");c.mis++}else{c.inv[i]=c.sel;c.ev.push(["buy:"+c.sel,HT]);if(c.sel===want){if(c.phase==="A")c.boughtA=HT;else{c.boughtB=HT;clearTimeout(c.tB);c.B_ok=!c.inv.includes("Winter Crown");fin1();return}}}c.sel=null}
-    draw()}}
-  function fin1(){if(!c)return;clearTimeout(c.tA);clearTimeout(c.tB);const ev=c.ev,T=x=>{const f=ev.find(y=>y[0]===x);return f?f[1]:null};
-    const r={A_ok:c.A_ok,A_ms:c.A_ms!=null?r1(c.A_ms):null,A_open_ms:T("open")!=null?r1(T("open")-c.t0):null,B_ok:c.B_ok,frozen_react_ms:c.react!=null?r1(c.react):null,B_ms:c.boughtB&&c.fz?r1(c.boughtB-c.fz):null,misclicks:c.mis,ok:c.A_ok&&c.B_ok,events:ev.map(x=>[x[0],r1(x[1]-c.t0)])};tr.push(r);
-    c=null;clear();msg((r.ok?"✓ ":"✗ ")+"სიკვდილი→Winter Crown: "+(r.A_ms!=null?(r.A_ms/1000).toFixed(2)+" / 2.5 წმ":"ვერ")+(r.A_ok?" · Frozen→Meteor: "+(r.B_ms!=null?(r.B_ms/1000).toFixed(2)+" / 2.0 წმ":"ვერ"):""),r.misclicks?"ზედმეტი დაჭერა: "+r.misclicks:"");k++;
+  function frozen(HT){c.phase="B2";c.fz=HT;c.react=HT-c.cue;clear();dim("rgba(120,190,255,.25)");ring(SC.btn.shop,"$");msg("❄ Frozen 2 წმ","");c.tB=setTimeout(()=>{if(!c)return;c.B_ok=c.inv.includes("Rose Gold Meteor")&&!c.inv.includes("Winter Crown");fin1()},2000)}
+  function on(kind,e,HT){if(!c)return;
+    for(const t of e.changedTouches){
+      if(kind==="down"){const p=toI(t.clientX,t.clientY);
+        if(c.phase==="B1"){if(dist(p,SC.btn.active)<=SC.btn.active.r*1.2)frozen(HT);else c.mis++;continue}
+        if(c.phase!=="A"&&c.phase!=="B2")continue;
+        if(!c.open){if(dist(p,SC.btn.shop)<=SC.btn.shop.r*1.25){c.open=true;c.tab=c.tab||"rec";c.ev.push(["open",HT]);clear();if(c.phase==="A")dim("rgba(60,60,60,.5)");mount();msg("","")}else c.mis++;continue}
+        const q2=toShop(t.clientX,t.clientY);c.drag={id:t.identifier,y0:q2.y,s0:c.scroll,p0:q2,moved:false,lt:HT,ly:q2.y,v:0};continue}
+      if(!c.drag||t.identifier!==c.drag.id)continue;const q2=toShop(t.clientX,t.clientY),L=SHOP.list,T=SHOP.tabs[c.tab];
+      if(kind==="move"){if(Math.abs(q2.y-c.drag.y0)>25)c.drag.moved=true;if(c.drag.moved&&inR(c.drag.p0,[L[0],L[1],L[0]+L[2],L[1]+L[3]])){const ns=Math.max(0,Math.min(T.h-L[3],c.drag.s0-(q2.y-c.drag.y0)));c.scrollPx+=Math.abs(ns-c.scroll);c.scroll=ns;const dt=HT-c.drag.lt;if(dt>0)c.drag.v=(c.drag.ly-q2.y)/dt;c.drag.lt=HT;c.drag.ly=q2.y;render()}continue}
+      if(kind==="up"){const d=c.drag;c.drag=null;if(d.moved){if(Math.abs(d.v)>0.3)inertia(d.v);continue}tap(d.p0,HT)}}}
+  function inertia(v){const L=SHOP.list,T=SHOP.tabs[c.tab];let last=now();const st=()=>{if(!c||!c.open||Math.abs(v)<0.05)return;const t=now(),dt=t-last;last=t;const ns=Math.max(0,Math.min(T.h-L[3],c.scroll+v*dt));if(ns===c.scroll)return;c.scrollPx+=Math.abs(ns-c.scroll);c.scroll=ns;v*=Math.pow(0.995,dt);render();requestAnimationFrame(st)};requestAnimationFrame(st)}
+  function tap(p,HT){const L=SHOP.list;
+    if(Math.hypot(p.x-SHOP.close[0],p.y-SHOP.close[1])<=90){c.open=false;c.sel=null;unmount();clear();if(c.phase==="A"){dim("rgba(60,60,60,.5)");ring(SC.btn.shop,"$")}else{dim("rgba(120,190,255,.25)");ring(SC.btn.shop,"$")}return}
+    for(const [id,T] of Object.entries(SHOP.tabs))if(p.x>=280&&p.x<=562&&Math.abs(p.y-T.y)<=60){if(c.tab!==id){c.tab=id;c.scroll=0;c.ev.push(["tab:"+id,HT])}render();return}
+    if(inR(p,[L[0],L[1],L[0]+L[2],L[1]+L[3]])){const ly=p.y-L[1]+c.scroll,lx=p.x-L[0];const it=SHOP.items.find(x=>x.t===c.tab&&Math.abs(ly-x.cy)<=105&&lx>=x.cx-100&&lx<=x.cx+300);if(it){c.sel=it;c.selFrom="shop";c.ev.push(["sel:"+it.n,HT])}else c.mis++;render();return}
+    for(let i=0;i<6;i++)if(Math.hypot(p.x-SHOP.slots[i],p.y-SHOP.slotY)<=62){if(c.inv[i]){c.sel={n:c.inv[i]};c.selFrom="inv";c.selSlot=i}else c.mis++;render();return}
+    if(inR(p,SHOP.sellAll)){c.sellAll++;c.mis++;msg("⚠ Sell All — თამაშში ყველაფერს გაყიდიდი!","");return}
+    if(inR(p,SHOP.buy)&&c.sel){const want=c.phase==="A"?["Immortality","Winter Crown"]:["Winter Crown","Rose Gold Meteor"];
+      if(c.selFrom==="inv"){if(c.sel.n!==want[0])c.mis++;c.inv[c.selSlot]=null;c.ev.push(["sell:"+c.sel.n,HT])}
+      else{const i=c.inv.indexOf(null);if(i<0){c.mis++}else{if(c.sel.n!==want[1])c.mis++;c.inv[i]=c.sel.n;c.ev.push(["buy:"+c.sel.n,HT]);if(c.sel.n===want[1]){if(c.phase==="A")c.boughtA=HT;else{c.boughtB=HT;clearTimeout(c.tB);c.B_ok=!c.inv.includes("Winter Crown");c.sel=null;render();setTimeout(fin1,150);return}}}}
+      c.sel=null;render();return}
+    c.mis++}
+  function fin1(){if(!c)return;clearTimeout(c.tA);clearTimeout(c.tB);unmount();const ev=c.ev,T=x=>{const f=ev.find(y=>y[0]===x);return f?f[1]:null};
+    const r={A_ok:c.A_ok,A_ms:c.A_ms!=null?r1(c.A_ms):null,A_open_ms:T("open")!=null?r1(T("open")-c.t0):null,B_ok:c.B_ok,frozen_react_ms:c.react!=null?r1(c.react):null,B_ms:c.boughtB&&c.fz?r1(c.boughtB-c.fz):null,misclicks:c.mis,sell_all:c.sellAll,scroll_px:Math.round(c.scrollPx),ok:c.A_ok&&c.B_ok,events:ev.map(x=>[x[0],r1(x[1]-c.t0)])};tr.push(r);
+    c=null;clear();msg((r.ok?"✓ ":"✗ ")+"☠→Winter Crown: "+(r.A_ms!=null?(r.A_ms/1000).toFixed(2)+" / 2.5 წმ":"ვერ")+(r.A_ok?" · ❄→Meteor: "+(r.B_ms!=null?(r.B_ms/1000).toFixed(2)+" / 2.0 წმ":"ვერ"):""),r.misclicks?"ზედმეტი დაჭერა: "+r.misclicks:"");k++;
     setTimeout(()=>{msg("");if(!RUN)return;if(k>=N)fin(false);else go()},1800)}
-  function fin(st){if(c){clearTimeout(c.tA);clearTimeout(c.tB);c=null}const md=a=>r1(q(a.filter(x=>x!=null),.5));
-    rec.summary={n:tr.length,success:tr.length?r1(tr.filter(x=>x.ok).length/tr.length*100):null,A_success:tr.length?r1(tr.filter(x=>x.A_ok).length/tr.length*100):null,B_success:tr.filter(x=>x.A_ok).length?r1(tr.filter(x=>x.B_ok).length/tr.filter(x=>x.A_ok).length*100):null,A_med:md(tr.map(x=>x.A_ms)),B_med:md(tr.map(x=>x.B_ms)),frozen_react_med:md(tr.map(x=>x.frozen_react_ms)),misclicks:tr.reduce((a,x)=>a+x.misclicks,0)};drillDone(rec,st)}
+  function fin(st){if(c){clearTimeout(c.tA);clearTimeout(c.tB);c=null}unmount();const md=a=>r1(q(a.filter(x=>x!=null),.5));
+    rec.summary={n:tr.length,success:tr.length?r1(tr.filter(x=>x.ok).length/tr.length*100):null,A_success:tr.length?r1(tr.filter(x=>x.A_ok).length/tr.length*100):null,B_success:tr.filter(x=>x.A_ok).length?r1(tr.filter(x=>x.B_ok).length/tr.filter(x=>x.A_ok).length*100):null,A_med:md(tr.map(x=>x.A_ms)),B_med:md(tr.map(x=>x.B_ms)),frozen_react_med:md(tr.map(x=>x.frozen_react_ms)),misclicks:tr.reduce((a,x)=>a+x.misclicks,0),sell_all:tr.reduce((a,x)=>a+x.sell_all,0)};drillDone(rec,st)}
   RUN={on,finish:fin}}
 
 /* მარტივი გზა: drill-ები RUN-ს ბოლოს აყენებენ; მზადყოფნა ცალკე ობიექტია */
@@ -535,7 +558,7 @@ function diagnose(s){const out=[];const BASE={d1:330,d3:BASELINE.index_ms,d2:BAS
     if(n>=10&&((s1-s2)>=.2||(m1&&m2&&m2>m1*1.15)))tag("AD-6","დაღლილობით ვარდნა",`1-ლი ნახევარი ${Math.round(s1*100)}% → მე-2 ${Math.round(s2*100)}%`+(s.fatigue?` · დაღლილობა ${s.fatigue}/5`:""),"შემდეგ ჯერზე მოკლე სესია ან შესვენება");});
   return out}
 /* ============ საწყისი გვერდი / პროგრესი ============ */
-const CARDS=[["d1","D1 · დოჯი (12 ტიპი + 10 ნამდვილი სკილი)","Atlas, Yu Zhong, Pharsa, Tigreal, Obsidia, Belerick S1, Masha, Marcel, Carmilla, Franco ჰუკი — გაზომილი დროით. სკილშოტები, არეალები, კონუსი, დეში, BA-ის ზონა, ორი ზედიზედ, ფეიკი, ბურსტი, Conceal-ით გაქცევა. ფეხით / S2 / Flicker / Frozen / Conceal — ზედმეტ ხარჯვას ითვლის."],["d2","D2 · კომბოები სიტუაციაში","შენი 9 კომბო: გმირი მართლა გადაადგილდება, სლაიდი სიტუაციის მიხედვით (შენიანები, ბეატრისის ზონა, დაბალი HP, დაცვა, გაქცეული მტერი)."],["d3","D3 · საჩვენებელი თითები","ორივე ცერა დაჭერილია, საჩვენებელით $/KDA/სიგნალები/მინიმაპი."],["d4","D4 · კამერის გაყინვა დატვირთვაში","საჩვენებელი კადრს აშეშებს (მინიმაპი ან თავისუფალი ზონა), ამ დროს ცერები სწრაფად მუშაობენ: ჯოისტიკის ისრები + სკილის რგოლები. 3→9 წმ, ტემპი ჩქარდება. ზომავს overflow-ს: რამდენს ცურავს საჩვენებელი ცერების გამო."],["d5","D5 · საფრთხის ამოცნობა","მტრის გმირი+სკილი → ვერ აიცილებ / მყისიერი რეაქცია / იკითხება. 20 გაზომილი სკილი, ფანჯარა ვიწროვდება."],["d6","D6 · მაღაზიის სვოპი","☠ Immortality → აღდგომამდე (2.5 წმ) Winter Crown; ❄ Frozen-ის 2 წამში → Rose Gold Meteor. ზომავს: დროს, ზედმეტ დაჭერებს, Frozen-ის რეაქციას."]];
+const CARDS=[["d1","D1 · დოჯი (12 ტიპი + 10 ნამდვილი სკილი)","Atlas, Yu Zhong, Pharsa, Tigreal, Obsidia, Belerick S1, Masha, Marcel, Carmilla, Franco ჰუკი — გაზომილი დროით. სკილშოტები, არეალები, კონუსი, დეში, BA-ის ზონა, ორი ზედიზედ, ფეიკი, ბურსტი, Conceal-ით გაქცევა. ფეხით / S2 / Flicker / Frozen / Conceal — ზედმეტ ხარჯვას ითვლის."],["d2","D2 · კომბოები სიტუაციაში","შენი 9 კომბო: გმირი მართლა გადაადგილდება, სლაიდი სიტუაციის მიხედვით (შენიანები, ბეატრისის ზონა, დაბალი HP, დაცვა, გაქცეული მტერი)."],["d3","D3 · საჩვენებელი თითები","ორივე ცერა დაჭერილია, საჩვენებელით $/KDA/სიგნალები/მინიმაპი."],["d4","D4 · კამერის გაყინვა დატვირთვაში","საჩვენებელი კადრს აშეშებს (მინიმაპი ან თავისუფალი ზონა), ამ დროს ცერები სწრაფად მუშაობენ: ჯოისტიკის ისრები + სკილის რგოლები. 3→9 წმ, ტემპი ჩქარდება. ზომავს overflow-ს: რამდენს ცურავს საჩვენებელი ცერების გამო."],["d5","D5 · საფრთხის ამოცნობა","მტრის გმირი+სკილი → ვერ აიცილებ / მყისიერი რეაქცია / იკითხება. 20 გაზომილი სკილი, ფანჯარა ვიწროვდება."],["d6","D6 · მაღაზიის სვოპი (ნამდვილი მაღაზია)","☠ Immortality → აღდგომამდე (2.5 წმ) Winter Crown; ❄ Frozen-ის 2 წამში → Rose Gold Meteor. ზომავს: დროს, ზედმეტ დაჭერებს, Frozen-ის რეაქციას."]];
 function render(){const c=$("cards");c.innerHTML="";fsCheck();const ls=DB.sessions[DB.sessions.length-1];if(ls&&ls.incomplete&&!ls.resumed&&ls.remaining&&ls.remaining.length&&Date.now()-Date.parse(ls.start)<6*36e5){const d=document.createElement("div");d.className="card";d.style.borderColor="var(--gold)";d.innerHTML="<b>⏸ შეწყვეტილი სესია</b><small>დარჩა: "+ls.remaining.map(x=>x.toUpperCase()).join(" → ")+" (იგივე რეჟიმი)</small>";const b=document.createElement("button");b.textContent="▶ გაგრძელება";b.className="go";b.style.float="right";b.onclick=()=>{$("mode").value=ls.mode;newSession(ls.remaining.slice(),ls)};d.appendChild(b);c.appendChild(d)}CARDS.forEach(([id,n,sub])=>{const S=DB.sessions.flatMap(s=>s.drills).filter(d=>d.drill===id&&d.summary);const last=S[S.length-1];
   const d=document.createElement("div");d.className="card";d.innerHTML="<b>"+n+"</b><small>"+sub+"</small><span class='st'>"+(last?"ბოლო: "+line(id,last.summary):"ჯერ არა")+" · სესია "+S.length+"</span>";
   const b=document.createElement("button");b.textContent="▶";b.className="go";b.style.float="right";b.onclick=()=>{if($("pain").value>=2&&!confirm("დისკომფორტი 2+ — მაინც გავაგრძელო?"))return;newSession([id])};d.appendChild(b);c.appendChild(d)});histTable()}
