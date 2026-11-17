@@ -87,6 +87,19 @@ function nearest(p){let best=null,bd=1e9;for(const k in SC.btn){const d=dist(p,S
 function onLock(p){if(!SC.lockp)return -1;return SC.lockp.findIndex(l=>dist(p,l)<=SC.lockr)}
 /* ბლოკების გეგმა */
 function shuffle(a){for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a}
+
+/* გიორგის კომბოები (17.11.2026, ✅ გიორგი). dir = სლაიდი, tap = ტაპი, f = „&“ (სწრაფად), wait = განზრახ მოლოდინი */
+const COMBOS=[
+ {h:"კაჯა",n:"S2→Ult→Flicker→S1",st:[["s2","dir"],["ult","dir"],["spell","dir"],["s1","tap"]]},
+ {h:"კაჯა",n:"S1&S2→Ult→Flicker",st:[["s1","tap"],["s2","dir",1],["ult","dir"],["spell","dir"]]},
+ {h:"კაჯა",n:"Flicker→Ult&S2→S1",st:[["spell","dir"],["ult","dir"],["s2","dir",1],["s1","tap"]]},
+ {h:"კაჯა",n:"Ult→Flicker&S2→S1",st:[["ult","dir"],["spell","dir"],["s2","dir",1],["s1","tap"]]},
+ {h:"ატლასი",n:"S2→S1→Ult→გადმოყრა",st:[["s2","dir"],["s1","tap"],["ult","dir"],["ult","dir",0,0,"გადმოყრა"]]},
+ {h:"ატლასი",n:"S2→Ult→გადმოყრა→S1",st:[["s2","dir"],["ult","dir"],["ult","dir",0,0,"გადმოყრა"],["s1","tap"]]},
+ {h:"ატლასი",n:"S2→Flicker&Ult→გადმოყრა→S1",st:[["s2","dir"],["spell","dir"],["ult","dir",1],["ult","dir",0,0,"გადმოყრა"],["s1","tap"]]},
+ {h:"მინოტავრი",n:"S1&Flicker→Ult→S1→S2",st:[["s1","dir"],["spell","dir",1],["ult","tap"],["s1","dir"],["s2","tap"]]},
+ {h:"მინოტავრი",n:"S1→Ult→(მე-3 დახტომა)→Flicker→S1→S2",st:[["s1","dir"],["ult","tap"],["spell","dir",0,1500],["s1","dir"],["s2","tap"]]}];
+const BN={s1:"S1",s2:"S2",ult:"ულტი",spell:"Flicker",atk:"შეტევა"};
 const TAPK=["atk","s1","s2","ult","spell","regen","recall","shop","qbuy","kda","sig_atk","sig_ret","sig_gat","map","zoom"];
 const BLOCKS=[
  ["tap","A · დაჭერა","15 ღილაკი × 2, შემთხვევითი რიგით (~1.5 წთ)","kalea",()=>shuffle([...TAPK,...TAPK]).map(k=>({type:"tap",k}))],
@@ -94,6 +107,7 @@ const BLOCKS=[
  ["swipe","C · გადასრიალება","ღილაკიდან ღილაკზე, ჰირარას ტიპის (8)","kalea",()=>shuffle([["s1","s2"],["s2","s1"],["s1","ult"],["ult","s2"],["s1","s2"],["s2","s1"],["s2","ult"],["ult","s1"]]).map(([a,b])=>({type:"swipe",a,b}))],
  ["chain","D · კომბო-ჯაჭვი","3 ღილაკი რიგით: 1→2→3 (8)","kalea",()=>shuffle([["s2","s1","ult"],["spell","ult","s1"],["s1","s2","atk"],["ult","spell","s2"],["s2","ult","s1"],["s1","spell","ult"],["atk","s2","s1"],["spell","s2","ult"]]).map(seq=>({type:"chain",seq}))],
  ["flk","F · Flicker↔ულტი: HUD-v1 vs v2A","ერთმანეთში არეული ორი განლაგება, 24 ჯაჭვი (~1.5 წთ)","kalea",()=>{const Q=[["spell","ult"],["ult","spell"],["spell","ult","s1"],["s2","spell","ult"]],o=[];for(let i=0;i<24;i++)o.push({type:"chain",seq:Q[Math.floor(i/2)%4],scene:i%2?"kaleaA":"kalea"});const pairs=[];for(let i=0;i<24;i+=2)pairs.push(Math.random()<.5?[o[i],o[i+1]]:[o[i+1],o[i]]);return shuffle(pairs).flat()}],
+ ["combo","G · ნამდვილი კომბოები (სლაიდით): v1 vs v2A","კაჯა/ატლასი/მინოტავრი, 9 კომბო × 2 × 2 განლაგება (~3 წთ)","kalea",()=>{const pairs=[];for(let r=0;r<2;r++)COMBOS.forEach((cb,ci)=>{const a={type:"combo",ci,scene:"kalea"},b={type:"combo",ci,scene:"kaleaA"};pairs.push(Math.random()<.5?[a,b]:[b,a])});return shuffle(pairs).flat()}],
  ["lock","E · Hero-lock ფონი","იგივე დაჭერები, ეკრანზე 5 lock-პორტრეტია (12)","lock",()=>shuffle(["atk","s1","s2","ult","spell","s1","s2","ult","atk","spell","s2","s1"]).map(k=>({type:"tap",k}))]];
 /* runner */
 let RUN=null;
@@ -116,7 +130,14 @@ function cue(c){const B=SC.btn;
   if(c.type==="tap")ring(B[c.k]);
   if(c.type==="aim"){ring(B[c.k]);arrow(B[c.k],c.ang,110)}
   if(c.type==="swipe"){ring(B[c.a],"1");ring(B[c.b],"2");arrowAB(B[c.a],B[c.b])}
-  if(c.type==="chain")c.seq.forEach((k,i)=>ring(B[k],String(i+1)))}
+  if(c.type==="chain")c.seq.forEach((k,i)=>ring(B[k],String(i+1)))
+  if(c.type==="combo"){const cb=COMBOS[c.ci];c.si=0;c.steps=[];c.mis=[];c.early=0;c.title=cb.h+" · "+cb.n;showStep(c)}}
+function showStep(c){clear();const cb=COMBOS[c.ci],st=cb.st[c.si],B=SC.btn,b=B[st[0]];$("prog").textContent=(RUN.i+1)+"/"+RUN.plan.length+" · "+c.title;
+  const go=()=>{if(!RUN||RUN.cur!==c)return;clear();c.waiting=false;ring(b,String(c.si+1));if(st[1]==="dir"){c.ang=-Math.PI+Math.random()*2*Math.PI;arrow(b,c.ang,110)}else{c.ang=null;msg("ტაპი","")}
+    const nx=cb.st[c.si+1];if(nx){const nb=B[nx[0]],p=toS(nb),d=document.createElement("div");d.className="ring";const r=nb.r*G.s;d.style.cssText="left:"+(p.x-r)+"px;top:"+(p.y-r)+"px;width:"+2*r+"px;height:"+2*r+"px;opacity:.3;border-style:dashed";$("ov").appendChild(d)}
+    c.stepT=now()};
+  if(st[1]!=="dir")msg("","");if(st[4])msg(st[4],"");
+  if(st[3]){c.waiting=true;msg("⏳ ელოდე მესამე დახტომას…","Flicker გამოჩნდება — მერე სლაიდი");setTimeout(()=>{msg("");go()},st[3])}else go()}
 function record(o){const c=RUN.cur;DB.trials.push(Object.assign({schema_version:SCHEMA,block:RUN.id,scene:SC.hero,trial:DB.trials.length+1,type:c.type,joy_held_at_cue:RUN.joyAtCue,active_touches:ACT.size,hud_version:DB.hud_version,scale:r1(G.s*1000)/1000},o));RUN.i++;RUN.state="gap";setTimeout(next,350)}
 function handle(kind,e){if(!RUN)return;const HT=now();
   if(RUN.state==="intro"){if(kind==="down"&&joyHeld()&&e.changedTouches[0].clientX>innerWidth/2){msg("");next()}else if(kind==="down"&&!joyHeld())msg("ჯერ მარცხენა ცერა ჯოისტიკზე","მერე მარჯვნივ შეეხე");return}
@@ -127,9 +148,16 @@ function handle(kind,e){if(!RUN)return;const HT=now();
     if(kind==="down"){if(dist(p,SC.btn.joy)<=SC.btn.joy.r*1.2&&!(c.type==="tap"&&c.k==="joy"))continue; // ჯოისტიკის ხელახალი დაჭერა არ ითვლება
       const rt=HT-RUN.cueT,nb=nearest(p),lk=onLock(p);
       if(c.type==="tap"){const b=SC.btn[c.k],d=dist(p,b);record({target:c.k,finger:b.f,rt_ms:r1(rt),hit:d<=b.r*1.15,err_rel:r1(d/b.r*100)/100,err_pt:r1(d*G.s),landed:nb.k,on_lock:lk,pos:{x:Math.round(p.x),y:Math.round(p.y)}});return}
+      if(c.type==="combo"){if(c.active)continue;if(c.waiting){c.early++;continue}const st=COMBOS[c.ci].st[c.si],b=SC.btn[st[0]];
+        if(dist(p,b)<=b.r*1.15){c.active={id:t.identifier,p,t:HT}}else{c.mis.push({step:c.si,exp:st[0],landed:nb.dr<=1.15?nb.k:"none",dr:r1(nb.dr*100)/100})}continue}
       if(c.type==="chain"){const k=c.seq[c.hits.length],b=SC.btn[k],d=dist(p,b);c.hits.push({k,ok:d<=b.r*1.15,t:r1(rt),err_rel:r1(d/b.r*100)/100,landed:nb.k});
         if(c.hits.length===c.seq.length){const iv=c.hits.slice(1).map((h,i)=>r1(h.t-c.hits[i].t));record({target:c.seq.join(">"),seq:c.seq,first_rt_ms:c.hits[0].t,intervals_ms:iv,total_ms:c.hits[c.hits.length-1].t,all_ok:c.hits.every(h=>h.ok),taps:c.hits})}return}
       if(c.type==="aim"||c.type==="swipe"){const k=c.type==="aim"?c.k:c.a,b=SC.btn[k];c.start={id:t.identifier,p,rt,ok:dist(p,b)<=b.r*1.15};return}}
+    if(kind==="up"&&c.type==="combo"&&c.active&&t.identifier===c.active.id){const cb=COMBOS[c.ci],st=cb.st[c.si],a=c.active;c.active=null;
+      const v={x:p.x-a.p.x,y:p.y-a.p.y},len=Math.hypot(v.x,v.y)*G.s;let ae=null;if(st[1]==="dir"&&len>=20){let da=Math.atan2(v.y,v.x)-c.ang;da=Math.atan2(Math.sin(da),Math.cos(da));ae=r1(Math.abs(da)*180/Math.PI)}
+      const ok=st[1]==="dir"?(len>=20&&ae<=30):len<20;
+      c.steps.push({k:st[0],input:st[1],fast:!!st[2],wait:!!st[3],press_ms:r1(a.t-c.stepT),release_ms:r1(HT-c.stepT),drag_pt:r1(len),angle_err_deg:ae,ok});
+      c.si++;if(c.si>=cb.st.length){const tot=c.steps.reduce((x,y)=>x+y.release_ms,0);record({target:cb.h+" "+cb.n,hero:cb.h,combo:cb.n,steps:c.steps,misclicks:c.mis,early:c.early,all_ok:c.steps.every(x=>x.ok)&&!c.mis.length,total_ms:r1(tot)})}else showStep(c);continue}
     if(kind==="up"&&c.start&&t.identifier===c.start.id){const rt=HT-RUN.cueT,s=c.start;
       if(c.type==="aim"){const v={x:p.x-s.p.x,y:p.y-s.p.y},len=Math.hypot(v.x,v.y)*G.s;let da=Math.atan2(v.y,v.x)-c.ang;da=Math.atan2(Math.sin(da),Math.cos(da));
         record({target:c.k,finger:"RT",start_ok:s.ok,press_rt_ms:r1(s.rt),release_rt_ms:r1(rt),drag_pt:r1(len),angle_err_deg:len<20?null:r1(Math.abs(da)*180/Math.PI),too_short:len<20})}
@@ -153,6 +181,10 @@ function report(){const T=DB.trials;let h="<div class='card' style='margin-top:1
   const fk=T.filter(t=>t.block==="flk");if(fk.length){h+="<p><b>F · Flicker↔ულტი</b></p><table><tr><th>განლაგება</th><th>n</th><th>უშეცდომო</th><th>Flicker↔ულტი გადასვლა მედ. ms</th><th>ჯაჭვი მთლიანად მედ. ms</th></tr>";
     ["Kalea","Kalea-v2A"].forEach(sc=>{const a=fk.filter(t=>t.scene===sc);if(!a.length)return;const tr=[];a.forEach(t=>{for(let i=1;i<t.seq.length;i++){const x=t.seq[i-1],y=t.seq[i];if((x==="spell"&&y==="ult")||(x==="ult"&&y==="spell"))tr.push(t.intervals_ms[i-1])}});
       h+="<tr><td>"+(sc==="Kalea"?"HUD-v1 (ახლანდელი)":"v2A (Flicker ულტთან)")+"</td><td>"+a.length+"</td><td>"+pct(a.filter(t=>t.all_ok).length,a.length)+"</td><td>"+Math.round(q(tr,.5))+"</td><td>"+Math.round(q(a.map(t=>t.total_ms),.5))+"</td></tr>"});h+="</table>"}
+  const cg=T.filter(t=>t.block==="combo");if(cg.length){h+="<p><b>G · ნამდვილი კომბოები</b></p><table><tr><th>განლაგება</th><th>n</th><th>უშეცდომო</th><th>არასწორი ღილაკი</th><th>…მათ შორის Flicker↔ულტი</th><th>ჟესტი სწორი</th><th>კუთხე მედ.°</th><th>Flicker დაჭერა მედ. ms</th><th>კომბო მთლიანად მედ. ms</th></tr>";
+    ["Kalea","Kalea-v2A"].forEach(sc=>{const a=cg.filter(t=>t.scene===sc);if(!a.length)return;const S=a.flatMap(t=>t.steps),M=a.flatMap(t=>t.misclicks),fm=M.filter(m=>(m.exp==="ult"&&m.landed==="spell")||(m.exp==="spell"&&m.landed==="ult")).length,ang=S.filter(x=>x.angle_err_deg!=null).map(x=>x.angle_err_deg),fl=S.filter(x=>x.k==="spell"&&!x.wait).map(x=>x.press_ms);
+      h+="<tr><td>"+(sc==="Kalea"?"HUD-v1":"v2A")+"</td><td>"+a.length+"</td><td>"+pct(a.filter(t=>t.all_ok).length,a.length)+"</td><td>"+M.length+"</td><td class='"+(fm?"bad":"good")+"'>"+fm+"</td><td>"+pct(S.filter(x=>x.ok).length,S.length)+"</td><td>"+(ang.length?q(ang,.5):"—")+"</td><td>"+(fl.length?Math.round(q(fl,.5)):"—")+"</td><td>"+Math.round(q(a.map(t=>t.total_ms),.5))+"</td></tr>"});h+="</table>";
+    const w=cg.flatMap(t=>t.steps.filter(x=>x.wait).map(x=>x.press_ms));if(w.length)h+="<p class='st'>მინოტავრი, Flicker მე-3 დახტომის შემდეგ: რეაქცია მედ. "+Math.round(q(w,.5))+" ms, ადრე დაჭერა "+cg.reduce((x,t)=>x+t.early,0)+"-ჯერ</p>"}
   const lk=T.filter(t=>t.block==="lock");if(lk.length){const same=tap.filter(t=>["atk","s1","s2","ult","spell"].includes(t.target));
     h+="<p><b>E · Hero-lock ფონი:</b> მოხვდა "+pct(lk.filter(t=>t.hit).length,lk.length)+", lock-პორტრეტზე დაეცა "+lk.filter(t=>t.on_lock>=0).length+"/"+lk.length+", მედ. "+Math.round(q(lk.map(t=>t.rt_ms),.5))+" ms"+(same.length?" (სუფთა ფონზე იგივე ღილაკები: "+Math.round(q(same.map(t=>t.rt_ms),.5))+" ms, "+pct(same.filter(t=>t.hit).length,same.length)+")":"")+"</p>"}
   h+="<p class='st'>შენიშვნა: ms ლაბორატორიისაა (60 Hz ვები) — თამაშის ms-ს პირდაპირ არ შეედრება; ვადარებთ განლაგებებს იმავე პირობებში (წ11).</p></div>";$("report").innerHTML=h}
