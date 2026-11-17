@@ -50,7 +50,7 @@ table{border-collapse:collapse;width:100%;font-size:12px}td,th{padding:3px 6px;b
   <div id="fs" class="card" style="display:none;border-color:var(--red);margin-bottom:8px"></div>
   <div class="row"><label>კონცენტრაცია <select id="conc"><option value="">?</option><option>1</option><option>2</option><option>3</option><option>4</option><option>5</option></select></label>
     <label>დაღლილობა <select id="fat"><option value="">?</option><option>1</option><option>2</option><option>3</option><option>4</option><option>5</option></select></label>
-    <label>რეჟიმი <select id="mode"><option value="train">ვარჯიში</option><option value="test">შეფასება (დაუნახავი სცენარები)</option><option value="warm">გახურება (~3 წთ, ცალკე აღირიცხება)</option></select></label>
+    <label>ხმა (D1) <select id="snd"><option value="off">გამორთ.</option><option value="on">ჩართ.</option></select></label><label>რეჟიმი <select id="mode"><option value="train">ვარჯიში</option><option value="test">შეფასება (დაუნახავი სცენარები)</option><option value="warm">გახურება (~3 წთ, ცალკე აღირიცხება)</option></select></label>
     <label>დისკომფორტი <select id="pain"><option>0</option><option>1</option><option>2</option><option>3</option></select></label>
     <label>განლაგება (D2) <select id="lay"><option value="kalea">ახლანდელი (v1)</option><option value="both">v1 + v2A შერეული (შეჩვევის ტრეკი)</option><option value="kaleaA">მხოლოდ v2A</option></select></label>
     <label>პანელი (D3) <select id="lay3"><option value="kalea">ახლანდელი (v1)</option><option value="all">სამივე შერეული (v1 / დიდი / ქვემოთ)</option><option value="panelBig">მხოლოდ დიდი</option><option value="panelLow">მხოლოდ ქვემოთ</option></select></label>
@@ -74,7 +74,7 @@ function panelScene(img,hero,f,fs){const b={};for(const k in BASE_BTN){const o=B
 SCENES.panelBig=panelScene("hud_panel_big.jpg","panel-big",(x,y)=>[2460-(2460-x)*1.25,y*1.25],1.25);
 SCENES.panelLow=panelScene("hud_panel_low.jpg","panel-low",(x,y)=>[x,y+130],1);
 /* საბაზისო ხაზი (ფაზა 0/1, სრული ეკრანი, 17.11) */
-const VERSION="v4.5 · 17.11 18:00";
+const VERSION="v4.6 · 17.11 18:30";
 const BASELINE={react_ms:345,index_ms:717,thumb_ms:601,flicker_press_ms:678,combo_total_ms:2638,angle_deg:5.4,gesture_ok:0.96};
 /* გიორგის კომბოები (17.11.2026, ✅ გიორგი). dir = სლაიდი, tap = ტაპი, f = „&“ (სწრაფად), wait = განზრახ მოლოდინი */
 const COMBOS=[
@@ -91,8 +91,12 @@ const COMBOS=[
 const $=id=>document.getElementById(id),now=()=>performance.now(),r1=x=>x==null?null:Math.round(x*10)/10;
 const q=(a,p)=>{if(!a.length)return null;const s=[...a].sort((x,y)=>x-y);return s[Math.min(s.length-1,Math.floor(p*s.length))]};
 /* RT-008/048: seeded randomization. ვარჯიში = ლუწი seed-ები (შემთხვევითი), შეფასება = კენტი TEST_SEEDS — ვარჯიშში არასდროს გამოჩნდება */
+/* RT-067/046: პატჩი სესიაში იწერება; პატჩის შეცვლისას შედარება ცალკე. სინქრონი: mlbb-v2/data/patches.json */
+const PATCH="O-11.11";
 let RNG=Math.random;const mulberry32=a=>()=>{a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296};
 const TEST_SEEDS=[1000003,2000003,3000007,4000037,5000011];
+/* RT-052: ხმოვანი სიგნალი საფრთხის დაწყებაზე (D1), ჩართვა/გამორთვა სესიაში იწერება — შედარება ცალკე */
+let ACX=null;function beep(){try{ACX=ACX||new (window.AudioContext||window.webkitAudioContext)();const o=ACX.createOscillator(),g=ACX.createGain();o.frequency.value=880;g.gain.value=.15;o.connect(g);g.connect(ACX.destination);o.start();o.stop(ACX.currentTime+.06)}catch(e){}}
 const shuffle=a=>{for(let i=a.length-1;i>0;i--){const j=Math.floor(RNG()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a};
 let DB;function blank(){return{schema_version:SCHEMA,created:new Date().toISOString(),sessions:[],adapt:{d1_T:700,d2_step:700,d2_level:{},d3_T:1400,d4_load:4000,d4_I:1100,d4_R:230}}}
 try{DB=JSON.parse(localStorage.getItem("rl_p2"))||blank()}catch(e){DB=blank()}if(DB.schema_version!==SCHEMA)DB=blank();
@@ -123,7 +127,7 @@ $("stop").addEventListener("touchstart",e=>{e.preventDefault();e.stopPropagation
 /* სესია */
 let QUEUE=[],SESSION=null;
 function newSession(drills,resumeOf){const prev=DB.sessions.filter(x=>x.end).slice(-1)[0],gapH=prev?(Date.now()-Date.parse(prev.end))/36e5:null;
-  SESSION={id:Date.now(),start:new Date().toISOString(),pain_start:+$("pain").value,conc:+$("conc").value||null,fatigue:+$("fat").value||null,mode:$("mode").value,retention:gapH!=null&&gapH>=24,gap_h:gapH==null?null:Math.round(gapH*10)/10,drills:[],lay:$("lay").value,hero:$("hero").value};const nT=DB.sessions.filter(x=>x.mode==="test").length;SESSION.seed=SESSION.mode==="test"?TEST_SEEDS[nT%TEST_SEEDS.length]:2*Math.floor(Math.random()*5e8);RNG=mulberry32(SESSION.seed);
+  SESSION={id:Date.now(),start:new Date().toISOString(),pain_start:+$("pain").value,conc:+$("conc").value||null,fatigue:+$("fat").value||null,mode:$("mode").value,retention:gapH!=null&&gapH>=24,gap_h:gapH==null?null:Math.round(gapH*10)/10,drills:[],lay:$("lay").value,hero:$("hero").value,sound:$("snd").value==="on",patch:PATCH};if(SESSION.sound)beep();const nT=DB.sessions.filter(x=>x.mode==="test").length;SESSION.seed=SESSION.mode==="test"?TEST_SEEDS[nT%TEST_SEEDS.length]:2*Math.floor(Math.random()*5e8);RNG=mulberry32(SESSION.seed);
   if(SESSION.mode==="test")SESSION._adapt=JSON.stringify(DB.adapt);if(resumeOf){SESSION.resumed_from=resumeOf.id;resumeOf.resumed=true}
   DB.sessions.push(SESSION);QUEUE=drills.slice();SESSION.plan=drills.slice();nextDrill()}
 function nextDrill(){if(!QUEUE.length){SESSION.end=new Date().toISOString();leave();report(SESSION);return}const d=QUEUE.shift();({d1:D1,d2:D2,d3:D3})[d]()}
@@ -190,7 +194,7 @@ function D1(){enter("kalea");DB.adapt.d1w=DB.adapt.d1w||{};const KEYS=Object.key
       cur.rc=sv(S,"circle",{cx:cur.enemy.x,cy:cur.enemy.y,r:th.R,fill:"rgba(224,96,90,.12)",stroke:"#e0605a","stroke-width":2,"stroke-dasharray":"6 5"});cur.ed=sv(S,"circle",{cx:cur.enemy.x,cy:cur.enemy.y,r:13,fill:"#e0605a",stroke:"#fff","stroke-width":3});
       cur.anim=()=>{};cur.nextHit=T;if(th.conceal){cur.baEnd=3000;cur.burnUntil=RNG()<.35?1300:0;if(cur.burnUntil){cur.hero.style.boxShadow="0 0 0 5px #ff8a3d";el("lbl",h.x,h.y+34,"🔥 იწვი")}cur.hitTimes=[]}}
     cur.walkOK=cur.req<=Math.max(0,(T/1000-RT_EST))*SPEED;
-    msg(th.n,"");const cc=cur;requestAnimationFrame(t=>{if(cc!==cur)return;cc.t0=now();cc.last=cc.t0;raf=requestAnimationFrame(tick);if(th.sh!=="ba")cc.timer=setTimeout(()=>judge(),T)})}
+    msg(th.n,"");const cc=cur;requestAnimationFrame(t=>{if(cc!==cur)return;cc.t0=now();if(SESSION.sound)beep();cc.last=cc.t0;raf=requestAnimationFrame(tick);if(th.sh!=="ba")cc.timer=setTimeout(()=>judge(),T)})}
   function inside(){const g=cur.geo,p=cur.pos;if(g.t==="line")return Math.abs((p.x-g.cx)*g.nx+(p.y-g.cy)*g.ny)<g.half+HR;
     if(g.t==="circle")return Math.hypot(p.x-g.cx,p.y-g.cy)<g.R+HR;
     if(g.t==="cone"){const dx=p.x-g.ex,dy=p.y-g.ey,d=Math.hypot(dx,dy);let da=Math.atan2(dy,dx)-g.a;da=Math.atan2(Math.sin(da),Math.cos(da));return d<g.R+HR&&Math.abs(da)<g.half+Math.atan2(HR,Math.max(d,1))}
@@ -226,12 +230,14 @@ function D1(){enter("kalea");DB.adapt.d1w=DB.adapt.d1w||{};const KEYS=Object.key
       cur.anim=()=>f.setAttribute("r",R*Math.min(1,(now()-t1)/T2));cur.walkOK=cur.walkOK&&(R+HR)<=Math.max(0,T2/1000-0.25)*SPEED;cur.timer=setTimeout(()=>judge(),T2);return}}
     cur.done=true;cancelAnimationFrame(raf);clearTimeout(cur.timer);
     const usedF=!!cur.flick;let ok=th.conceal?!!(cur.cc&&cur.cc.ok):cur.geo.t==="ba"?cur.hits===0:(!inside()&&!cur.stage1hit);if(cur.frozen&&!ok&&cur.geo.t!=="ba")ok=true;if(cur.cancelled)ok=!usedF&&!cur.frozen;const frozenWasted=!!cur.frozen&&!th.burst;const wasted=usedF&&(cur.walkOK||cur.cancelled)&&(cur.cancelled||ok);
-    tr.push({k:cur.k,type:cur.key,conceal:cur.cc||null,burning:!!cur.burnUntil,frozen:cur.frozen||null,frozen_wasted:frozenWasted,fake_cancelled:!!cur.cancelled,dash:cur.dash||null,ok,why:ok?"ok":(cur.cancelled?"flicker_on_fake":(cur.onset==null?"no_move":"hit")),onset_ms:r1(cur.onset),anticipation:cur.onset!=null&&cur.onset<120,window_ms:Math.round(cur.T),walk_possible:cur.walkOK,flicker:cur.flick,flicker_wasted:wasted,ba_hits:cur.geo.t==="ba"?cur.hits:null});
+    const gc=cur.geo&&(cur.geo.cx!=null?{x:cur.geo.cx,y:cur.geo.cy}:cur.geo.ex!=null?{x:cur.geo.ex,y:cur.geo.ey}:null),occ=gc&&cur.geo.t!=="line"?[...ACT.values()].some(t=>dist(toI(t.x,t.y),gc)<=(cur.geo.R||0)+160):null;
+    tr.push({occluded:occ,sound:SESSION.sound||false,k:cur.k,type:cur.key,conceal:cur.cc||null,burning:!!cur.burnUntil,frozen:cur.frozen||null,frozen_wasted:frozenWasted,fake_cancelled:!!cur.cancelled,dash:cur.dash||null,ok,why:ok?"ok":(cur.cancelled?"flicker_on_fake":(cur.onset==null?"no_move":"hit")),onset_ms:r1(cur.onset),anticipation:cur.onset!=null&&cur.onset<120,window_ms:Math.round(cur.T),walk_possible:cur.walkOK,flicker:cur.flick,flicker_wasted:wasted,ba_hits:cur.geo.t==="ba"?cur.hits:null});
     const w=W(cur.key),last=tr.filter(x=>x.type===cur.key).slice(-2);if(THR[cur.key].fixed){}else if(ok&&last.length===2&&last.every(x=>x.ok))DB.adapt.d1w[cur.key]=Math.max(200,w*0.92);else if(!ok)DB.adapt.d1w[cur.key]=Math.min(1600,w*1.12);
     const txt=th.conceal?(ok?"✓ Conceal — გაქრი, BA ვეღარ გარტყამს · "+Math.round(cur.cc.at)+" ms":(cur.cc&&cur.cc.removed?"✗ Conceal ჩამოგეხსნა ("+(cur.cc.removed==="burn"?"წვა":"BA-ის მომენტი")+") — დაელოდე წვის დასრულებას / BA-ებს შორის დააჭირე":"✗ Conceal არ გამოიყენე")):th.burst?(ok?(cur.frozen?"✓ Frozen — გადარჩი · "+Math.round(cur.frozen.at)+" ms":"✓ გადარჩი"):"✗ ბურსტი მოგხვდა — აქ Frozen სჭირდებოდა"):cur.cancelled?(ok?"✓ ფეიკი იყო — Flicker შეინახე":"✗ ფეიკი იყო — Flicker ტყუილად დახარჯე"):ok?("✓ გადარჩი"+(cur.onset!=null?" · "+Math.round(cur.onset)+" ms":"")+(wasted?" · ⚠ Flicker ზედმეტი იყო (ფეხითაც ასწრებდი)":"")):(cur.geo.t==="ba"?"✗ BA მოგხვდა "+cur.hits+"-ჯერ":(cur.onset==null?"✗ არ გაინძერი":(!cur.walkOK&&!usedF?"✗ მოგხვდა — ფეხით ვერ ასწრებდი, Flicker სჭირდებოდა":"✗ მოგხვდა")));
     msg(txt+(frozenWasted?" · ⚠ Frozen ზედმეტად დახარჯე (გრძელი გადატვირთვა)":""),"");cur=null;k++;setTimeout(()=>{msg("");if(!RUN)return;if(k>=N)fin(false);else go()},1100)}
   function fin(st){cancelAnimationFrame(raf);const ok=tr.filter(x=>x.ok),by={};tr.forEach(x=>{(by[x.type]=by[x.type]||[]).push(x.ok)});
-    rec.summary={n:tr.length,success:tr.length?r1(ok.length/tr.length*100):null,onset_med:r1(q(tr.filter(x=>x.onset_ms!=null&&!x.anticipation).map(x=>x.onset_ms),.5)),anticipations:tr.filter(x=>x.anticipation).length,
+    const oc=tr.filter(x=>x.occluded===true),no=tr.filter(x=>x.occluded===false),pct=a=>a.length?Math.round(a.filter(x=>x.ok).length/a.length*100):null;
+    rec.summary={occl:{n:oc.length,success:pct(oc)},open:{n:no.length,success:pct(no)},n:tr.length,success:tr.length?r1(ok.length/tr.length*100):null,onset_med:r1(q(tr.filter(x=>x.onset_ms!=null&&!x.anticipation).map(x=>x.onset_ms),.5)),anticipations:tr.filter(x=>x.anticipation).length,
       flicker_used:tr.filter(x=>x.flicker).length,dash_used:tr.filter(x=>x.dash).length,frozen_used:tr.filter(x=>x.frozen).length,frozen_wasted:tr.filter(x=>x.frozen_wasted).length,burst_missed:tr.filter(x=>x.type==="burst"&&!x.ok).length,fake_flicker:tr.filter(x=>x.why==="flicker_on_fake").length,flicker_wasted:tr.filter(x=>x.flicker_wasted).length,flicker_needed_missed:tr.filter(x=>!x.walk_possible&&!x.flicker&&!x.ok).length,
       by_type:Object.fromEntries(Object.entries(by).map(([a,b])=>[THR[a].n,Math.round(b.filter(Boolean).length/b.length*100)+"% ("+b.length+")"])),windows:Object.fromEntries(KEYS.map(x=>[x,Math.round(W(x))])),window_end:null};drillDone(rec,st)}
   RUN={on,finish:fin}}
@@ -502,7 +508,7 @@ function seriesOf(d){if(d.drill==="d1")return{t:d.trials.filter(x=>x.ok&&x.onset
   if(d.drill==="d5")return{t:d.trials.filter(x=>x.ok).map(x=>x.rt_ms),ok:d.trials.map(x=>x.ok),tr:d.trials,rtKey:"rt_ms"};
   if(d.drill==="d4")return{t:d.trials.filter(x=>x.cue_rt_med!=null).map(x=>x.cue_rt_med),ok:d.trials.map(x=>x.ok),tr:d.trials,rtKey:"cue_rt_med"};
   if(d.drill==="d2")return{t:d.trials.map(x=>x.active_ms),ok:d.trials.map(x=>x.clean),tr:d.trials,rtKey:"active_ms"};return null}
-function histMed(drill){const a=DB.sessions.filter(x=>x!==SESSION&&x.mode!=="warm"&&x.mode!=="test").flatMap(x=>x.drills).filter(x=>x.drill===drill&&(drill!=="d1"||x.ver===2)&&(drill!=="d2"||x.ver===3)&&(drill!=="d4"||x.ver===2));const v=a.flatMap(x=>(seriesOf(x)||{t:[]}).t);return v.length>=10?pq(v,.5):null}
+function histMed(drill){const a=DB.sessions.filter(x=>x!==SESSION&&x.mode!=="warm"&&x.mode!=="test"&&(!x.patch||x.patch===PATCH)).flatMap(x=>x.drills).filter(x=>x.drill===drill&&(drill!=="d1"||x.ver===2)&&(drill!=="d2"||x.ver===3)&&(drill!=="d4"||x.ver===2));const v=a.flatMap(x=>(seriesOf(x)||{t:[]}).t);return v.length>=10?pq(v,.5):null}
 function diagnose(s){const out=[];const BASE={d1:330,d3:BASELINE.index_ms,d2:BASELINE.combo_total_ms,d4:700,d5:1500,d6:2000};
   s.drills.forEach(d=>{const S=seriesOf(d);if(!S||!S.ok.length)return;const n=S.ok.length,succ=S.ok.filter(Boolean).length/n,med=pq(S.t,.5),p90=pq(S.t,.9),iqr=S.t.length>=4?pq(S.t,.75)-pq(S.t,.25):null;
     const ref=histMed(d.drill)||BASE[d.drill],h=Math.floor(n/2),s1=S.ok.slice(0,h).filter(Boolean).length/Math.max(1,h),s2=S.ok.slice(h).filter(Boolean).length/Math.max(1,n-h);
@@ -521,6 +527,7 @@ function diagnose(s){const out=[];const BASE={d1:330,d3:BASELINE.index_ms,d2:BAS
       const ov=pq(d.trials.map(x=>x.overflow_pt).filter(x=>x!=null),.5),cm=pq(d.trials.map(x=>x.calm_pt).filter(x=>x!=null),.5);if(ov!=null&&cm!=null&&ov>=3&&ov>=cm*2)tag("AD-7","საჩვენებელი ცერებს მიჰყვება (overflow)",`ცერის მოქმედების შემდეგ ${ov} pt vs მშვიდად ${cm} pt`,"დატვირთვა ნაკლები ტემპით; საჩვენებელი მსუბუქად, მაგრამ მყარად დაადე");
       const lost=d.trials.filter(x=>x.why==="frame_lost"||x.why==="released").length;if(lost/n>=.3)tag("AD-7","კადრის შენარჩუნება დატვირთვაში",`კადრი დაკარგე/აუშვი ${lost}/${n}`,"ჯერ ნელი ტემპი, მერე აჩქარება");}
     if(d.drill==="d5"&&d.summary&&d.summary.wrong&&d.summary.wrong.length/n>=.3)tag("AD-3","საფრთხის კლასის ამოცნობა",`შეცდომა ${d.summary.wrong.length}/${n}: ${d.summary.wrong.slice(0,4).join(", ")}`,"ჯერ ეს სკილები ისწავლე: რომელზე რეაგირებ, რომელზე წინასწარ დგები");
+    if(d.drill==="d1"&&d.summary&&d.summary.occl&&d.summary.occl.n>=4&&d.summary.open.n>=4&&d.summary.open.success-d.summary.occl.success>=20)tag("AD-3","თითი ფარავს საფრთხეს (occlusion)",`თითის ქვეშ ${d.summary.occl.success}% (${d.summary.occl.n}) vs ღიაში ${d.summary.open.success}%`,"HUD-ის ცვლილების პროტოკოლით: ჯოისტიკის/ღილაკების ზონა vs გმირის პოზიცია");
     if(d.drill==="d6"&&d.summary){const s6=d.summary;if(s6.A_success!=null&&s6.A_success<70)tag("AD-1","სიკვდილის ფანჯარაში სვოპი ვერ ესწრება",`Winter Crown დროზე ${s6.A_success}% · მედიანა ${s6.A_med} ms / 2500`,"მაღაზიის გზა დაიმახსოვრე: დაცვა→Immortality→გაყიდვა→მაგია→Winter Crown→ყიდვა");if(s6.B_success!=null&&s6.B_success<70)tag("AD-1","Frozen-ის დროს სვოპი ვერ ესწრება",`Meteor დროზე ${s6.B_success}% · მედიანა ${s6.B_med} ms / 2000`,"Frozen-ისთანავე მაღაზია — არ დაელოდო")}
     const mt=d.drill==="d6"?0:d.drill==="d5"?0:d.drill==="d4"?d.trials.filter(x=>x.why==="thumb_lift").length:d.drill==="d3"?d.trials.filter(x=>x.why==="thumb_lift").length:d.drill==="d2"?d.trials.reduce((a,x)=>a+x.misclicks.length,0):d.trials.filter(x=>x.joy_lifted).length;
     if(mt>=2)tag("AD-4","მრავალი თითის ურთიერთხელშეშლა",`${d.drill==="d3"?"ცერის აშვება":d.drill==="d2"?"არასწორი ღილაკი":"ჯოისტიკის აშვება"} ${mt}-ჯერ`,"ტემპი შეანელე, თითები ადგილზე დარჩეს");
