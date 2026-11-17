@@ -70,7 +70,7 @@ function panelScene(img,hero,f,fs){const b={};for(const k in BASE_BTN){const o=B
 SCENES.panelBig=panelScene("hud_panel_big.jpg","panel-big",(x,y)=>[2460-(2460-x)*1.25,y*1.25],1.25);
 SCENES.panelLow=panelScene("hud_panel_low.jpg","panel-low",(x,y)=>[x,y+130],1);
 /* საბაზისო ხაზი (ფაზა 0/1, სრული ეკრანი, 17.11) */
-const VERSION="v3.4 · 17.11 07:45";
+const VERSION="v3.5 · 17.11 08:00";
 const BASELINE={react_ms:345,index_ms:717,thumb_ms:601,flicker_press_ms:678,combo_total_ms:2638,angle_deg:5.4,gesture_ok:0.96};
 /* გიორგის კომბოები (17.11.2026, ✅ გიორგი). dir = სლაიდი, tap = ტაპი, f = „&“ (სწრაფად), wait = განზრახ მოლოდინი */
 const COMBOS=[
@@ -131,17 +131,18 @@ const THR={slow:{n:"ნელი სკილშოტი",sh:"line",w:44,T0:800
   circS:{n:"პატარა არეალი",sh:"circle",R:48,T0:600},circL:{n:"დიდი არეალი",sh:"circle",R:95,T0:850},cone:{n:"კონუსი",sh:"cone",R:160,half:.55,T0:550},
   dash:{n:"მტრის დეში შენზე",sh:"line",w:40,T0:420,from:1},ba:{n:"BA-ის ზონა — დაიჭირე დისტანცია",sh:"ba",R:85,T0:700},
   dbl:{n:"ორი ზედიზედ (სკილშოტი → არეალი)",sh:"line",w:34,T0:600,dbl:1},fake:{n:"ფეიკი? (შეიძლება გაუქმდეს)",sh:"line",w:44,T0:800,fake:1},
-  burst:{n:"აუცილებელი ბურსტი — ვერ გაექცევი",sh:"circle",R:175,T0:750,burst:1}};
+  burst:{n:"აუცილებელი ბურსტი — ვერ გაექცევი",sh:"circle",R:175,T0:750,burst:1},
+  conceal:{n:"გაქცევა Conceal-ით (არა BA-ის მომენტში, არა წვისას)",sh:"ba",R:85,T0:900,conceal:1}};
 const SVGNS="http://www.w3.org/2000/svg";
 function svg(){const s=document.createElementNS(SVGNS,"svg");s.setAttribute("width",innerWidth);s.setAttribute("height",innerHeight);s.style.cssText="position:absolute;left:0;top:0;pointer-events:none";$("ov").appendChild(s);return s}
 function sv(p,tag,attrs){const e=document.createElementNS(SVGNS,tag);for(const k in attrs)e.setAttribute(k,attrs[k]);p.appendChild(e);return e}
-function D1(){enter("kalea");DB.adapt.d1w=DB.adapt.d1w||{};const KEYS=Object.keys(THR),N=33,tr=[];let k=0,cur=null,raf=0;const rec={drill:"d1",ver:2,name:"D1 · დოჯი (ტიპები)",trials:tr};
+function D1(){enter("kalea");DB.adapt.d1w=DB.adapt.d1w||{};const KEYS=Object.keys(THR),N=36,tr=[];let k=0,cur=null,raf=0;const rec={drill:"d1",ver:2,name:"D1 · დოჯი (ტიპები)",trials:tr};
   const SPEED=110,DEAD=6,FULL=26,HR=11,FLICK=150,RT_EST=0.3;
   const plan=shuffle(Array.from({length:N},(_,i)=>KEYS[i%KEYS.length]));
   ready("D1 · დოჯი: მარცხენა ცერა — მოძრაობა. ფეხით ვერ ასწრებ → S2 (გმირის დეში) ან Flicker, სლაიდით. ფეიკზე Flicker არ დახარჯო. გაქცევა შეუძლებელია → Frozen (ლურჯი ღილაკი)",false,go);
   function W(key){return DB.adapt.d1w[key]||THR[key].T0}
-  function frozenBtn(){const b=SC.btn.active,p=toS(b),r=b.r*G.s;const d=el("ring",p.x-r,p.y-r);d.style.width=d.style.height=2*r+"px";d.style.borderColor="#7fb8ff";d.style.boxShadow="0 0 10px #7fb8ff";d.style.background="rgba(60,110,220,.45)";el("lbl",p.x,p.y+r+18,"Frozen")}
-  function go(){cancelAnimationFrame(raf);clear();frozenBtn();const key=plan[k];$("prog").textContent="D1 "+(k+1)+"/"+N+" · "+THR[key].n+" · "+Math.round(W(key))+" ms";const h=toS(HERO);
+  function frozenBtn(lbl){const b=SC.btn.active,p=toS(b),r=b.r*G.s;const d=el("ring",p.x-r,p.y-r);d.style.width=d.style.height=2*r+"px";d.style.borderColor="#7fb8ff";d.style.boxShadow="0 0 10px #7fb8ff";d.style.background="rgba(60,110,220,.45)";el("lbl",p.x,p.y+r+18,lbl||"Frozen")}
+  function go(){cancelAnimationFrame(raf);clear();const key=plan[k];frozenBtn(THR[key].conceal?"Conceal":"Frozen");$("prog").textContent="D1 "+(k+1)+"/"+N+" · "+THR[key].n+" · "+Math.round(W(key))+" ms";const h=toS(HERO);
     let calm=0;const wait=()=>{if(!RUN||RUN.stopped)return;const j=joyTouch();if(!j){msg("დაადე მარცხენა ცერა ჯოისტიკზე");setTimeout(wait,120);return}
       if(Math.hypot(j.t.x-j.t.sx,j.t.y-j.t.sy)>DEAD){calm=0;msg("გააჩერე ჯოისტიკი ცენტრში","");setTimeout(wait,100);return}
       calm+=100;if(calm<300){setTimeout(wait,100);return}msg("");const hero=el("hero",h.x,h.y);setTimeout(()=>spawn(key,h,hero),500+Math.random()*1300)};wait()}
@@ -164,7 +165,7 @@ function D1(){enter("kalea");DB.adapt.d1w=DB.adapt.d1w||{};const KEYS=Object.key
       const f=sv(S,"path",{d:"",fill:"rgba(224,96,90,.6)"});cur.anim=p=>{const r=th.R*p,q2=a=>(ex+Math.cos(a)*r)+","+(ey+Math.sin(a)*r);f.setAttribute("d","M"+ex+","+ey+" L"+q2(ang-th.half)+" A"+r+","+r+" 0 0 1 "+q2(ang+th.half)+" Z")}}
     if(th.sh==="ba"){const d=45+Math.random()*25;cur.enemy={x:h.x-Math.cos(ang)*d,y:h.y-Math.sin(ang)*d};cur.geo={t:"ba",R:th.R};cur.req=th.R+HR-d;cur.baEnd=2200;
       cur.rc=sv(S,"circle",{cx:cur.enemy.x,cy:cur.enemy.y,r:th.R,fill:"rgba(224,96,90,.12)",stroke:"#e0605a","stroke-width":2,"stroke-dasharray":"6 5"});cur.ed=sv(S,"circle",{cx:cur.enemy.x,cy:cur.enemy.y,r:13,fill:"#e0605a",stroke:"#fff","stroke-width":3});
-      cur.anim=()=>{};cur.nextHit=T}
+      cur.anim=()=>{};cur.nextHit=T;if(th.conceal){cur.baEnd=3000;cur.burnUntil=Math.random()<.35?1300:0;if(cur.burnUntil){cur.hero.style.boxShadow="0 0 0 5px #ff8a3d";el("lbl",h.x,h.y+34,"🔥 იწვი")}cur.hitTimes=[]}}
     cur.walkOK=cur.req<=Math.max(0,(T/1000-RT_EST))*SPEED;
     msg(th.n,"");const cc=cur;requestAnimationFrame(t=>{if(cc!==cur)return;cc.t0=now();cc.last=cc.t0;raf=requestAnimationFrame(tick);if(th.sh!=="ba")cc.timer=setTimeout(()=>judge(),T)})}
   function inside(){const g=cur.geo,p=cur.pos;if(g.t==="line")return Math.abs((p.x-g.cx)*g.nx+(p.y-g.cy)*g.ny)<g.half+HR;
@@ -175,12 +176,18 @@ function D1(){enter("kalea");DB.adapt.d1w=DB.adapt.d1w||{};const KEYS=Object.key
     if(a){const vx=a.x-cur.c0.x,vy=a.y-cur.c0.y,d=Math.hypot(vx,vy);if(d>DEAD){if(cur.onset==null)cur.onset=el2;const sp=SPEED*Math.min(1,d/FULL);cur.pos.x+=vx/d*sp*dt;cur.pos.y+=vy/d*sp*dt}}
     cur.pos.x=Math.max(20,Math.min(innerWidth-20,cur.pos.x));cur.pos.y=Math.max(20,Math.min(innerHeight-20,cur.pos.y));cur.hero.style.left=cur.pos.x+"px";cur.hero.style.top=cur.pos.y+"px";
     if(cur.geo.t==="ba"){const e=cur.enemy,dx=cur.pos.x-e.x,dy=cur.pos.y-e.y,d=Math.hypot(dx,dy)||1;if(d>30){e.x+=dx/d*70*dt;e.y+=dy/d*70*dt}cur.rc.setAttribute("cx",e.x);cur.rc.setAttribute("cy",e.y);cur.ed.setAttribute("cx",e.x);cur.ed.setAttribute("cy",e.y);
-      if(el2>=cur.nextHit){if(inside()){cur.hits++;const fl=sv(cur.S,"circle",{cx:e.x,cy:e.y,r:THR.ba.R,fill:"rgba(224,96,90,.55)"});setTimeout(()=>fl.remove(),150)}cur.nextHit+=700}
+      if(THR[cur.key].ba||cur.geo.t==="ba"){const wu=cur.nextHit-el2<220;cur.rc.setAttribute("stroke",wu?"#f2c64a":"#e0605a");cur.rc.setAttribute("stroke-width",wu?5:2)}
+      if(cur.burnUntil&&el2>=cur.burnUntil&&!cur.burnOff){cur.burnOff=true;cur.hero.style.boxShadow=''}
+      if(el2>=cur.nextHit){if(cur.hitTimes)cur.hitTimes.push(cur.nextHit);if(inside()&&!(cur.cc&&cur.cc.ok)){cur.hits++;if(cur.cc&&cur.cc.ok===undefined)cur.hitsAfter=(cur.hitsAfter||0)+1;const fl=sv(cur.S,"circle",{cx:e.x,cy:e.y,r:THR.ba.R,fill:"rgba(224,96,90,.55)"});setTimeout(()=>fl.remove(),150)}cur.nextHit+=700}
       if(el2>=cur.baEnd){judge();return}}
     else cur.anim(Math.min(1,el2/cur.T));
     raf=requestAnimationFrame(tick)}
   function on(kind,e,HT){if(!cur||cur.done||cur.t0==null)return;for(const t of e.changedTouches){if(t.identifier===cur.jid)continue;const p=toI(t.clientX,t.clientY);
-    if(kind==="down"&&!cur.frozen&&dist(p,SC.btn.active)<=SC.btn.active.r*1.2){cur.frozen={at:r1(HT-cur.t0)};if(cur.onset==null)cur.onset=HT-cur.t0;cur.hero.style.boxShadow="0 0 0 6px #7fb8ff";continue}
+    if(kind==="down"&&THR[cur.key].conceal&&!cur.cc&&dist(p,SC.btn.active)<=SC.btn.active.r*1.2){const at=HT-cur.t0;if(cur.onset==null)cur.onset=at;
+      const lastHit=cur.hitTimes.length?cur.hitTimes[cur.hitTimes.length-1]:-1e9,near=Math.min(Math.abs(at-lastHit),Math.abs(cur.nextHit-at));
+      if(at<cur.burnUntil)cur.cc={at:r1(at),removed:"burn"};else if(near<150)cur.cc={at:r1(at),removed:"ba"};else{cur.cc={at:r1(at),ok:true};cur.hero.style.opacity=.35}
+      if(cur.cc.removed)msg(cur.cc.removed==="burn"?"✗ Conceal ჩამოგეხსნა — იწვოდი":"✗ Conceal ჩამოგეხსნა — BA ზუსტად გაქრობის მომენტში","");continue}
+    if(kind==="down"&&!cur.frozen&&!THR[cur.key].conceal&&dist(p,SC.btn.active)<=SC.btn.active.r*1.2){cur.frozen={at:r1(HT-cur.t0)};if(cur.onset==null)cur.onset=HT-cur.t0;cur.hero.style.boxShadow="0 0 0 6px #7fb8ff";continue}
     if(kind==="down"&&!cur.flick&&dist(p,SC.btn.spell)<=SC.btn.spell.r*1.2){cur.fpress={id:t.identifier,x:t.clientX,y:t.clientY,t:HT};continue}
     if(kind==="down"&&!cur.dash&&dist(p,SC.btn.s2)<=SC.btn.s2.r*1.15){cur.dpress={id:t.identifier,x:t.clientX,y:t.clientY,t:HT};continue}
     if(kind==="up"&&cur.dpress&&t.identifier===cur.dpress.id){const vx=t.clientX-cur.dpress.x,vy=t.clientY-cur.dpress.y,d=Math.hypot(vx,vy),dp=cur.dpress;cur.dpress=null;
@@ -195,10 +202,10 @@ function D1(){enter("kalea");DB.adapt.d1w=DB.adapt.d1w||{};const KEYS=Object.key
       sv(cur.S,"circle",{cx,cy,r:R,fill:"rgba(224,96,90,.18)",stroke:"#e0605a","stroke-width":2});const f=sv(cur.S,"circle",{cx,cy,r:0,fill:"rgba(224,96,90,.6)"});const t1=now(),T2=Math.max(300,cur.T*0.75);
       cur.anim=()=>f.setAttribute("r",R*Math.min(1,(now()-t1)/T2));cur.walkOK=cur.walkOK&&(R+HR)<=Math.max(0,T2/1000-0.25)*SPEED;cur.timer=setTimeout(()=>judge(),T2);return}}
     cur.done=true;cancelAnimationFrame(raf);clearTimeout(cur.timer);
-    const usedF=!!cur.flick;let ok=cur.geo.t==="ba"?cur.hits===0:(!inside()&&!cur.stage1hit);if(cur.frozen&&!ok&&cur.geo.t!=="ba")ok=true;if(cur.cancelled)ok=!usedF&&!cur.frozen;const frozenWasted=!!cur.frozen&&!th.burst;const wasted=usedF&&(cur.walkOK||cur.cancelled)&&(cur.cancelled||ok);
-    tr.push({k:cur.k,type:cur.key,frozen:cur.frozen||null,frozen_wasted:frozenWasted,fake_cancelled:!!cur.cancelled,dash:cur.dash||null,ok,why:ok?"ok":(cur.cancelled?"flicker_on_fake":(cur.onset==null?"no_move":"hit")),onset_ms:r1(cur.onset),anticipation:cur.onset!=null&&cur.onset<120,window_ms:Math.round(cur.T),walk_possible:cur.walkOK,flicker:cur.flick,flicker_wasted:wasted,ba_hits:cur.geo.t==="ba"?cur.hits:null});
+    const usedF=!!cur.flick;let ok=th.conceal?!!(cur.cc&&cur.cc.ok):cur.geo.t==="ba"?cur.hits===0:(!inside()&&!cur.stage1hit);if(cur.frozen&&!ok&&cur.geo.t!=="ba")ok=true;if(cur.cancelled)ok=!usedF&&!cur.frozen;const frozenWasted=!!cur.frozen&&!th.burst;const wasted=usedF&&(cur.walkOK||cur.cancelled)&&(cur.cancelled||ok);
+    tr.push({k:cur.k,type:cur.key,conceal:cur.cc||null,burning:!!cur.burnUntil,frozen:cur.frozen||null,frozen_wasted:frozenWasted,fake_cancelled:!!cur.cancelled,dash:cur.dash||null,ok,why:ok?"ok":(cur.cancelled?"flicker_on_fake":(cur.onset==null?"no_move":"hit")),onset_ms:r1(cur.onset),anticipation:cur.onset!=null&&cur.onset<120,window_ms:Math.round(cur.T),walk_possible:cur.walkOK,flicker:cur.flick,flicker_wasted:wasted,ba_hits:cur.geo.t==="ba"?cur.hits:null});
     const w=W(cur.key),last=tr.filter(x=>x.type===cur.key).slice(-2);if(ok&&last.length===2&&last.every(x=>x.ok))DB.adapt.d1w[cur.key]=Math.max(200,w*0.92);else if(!ok)DB.adapt.d1w[cur.key]=Math.min(1600,w*1.12);
-    const txt=th.burst?(ok?(cur.frozen?"✓ Frozen — გადარჩი · "+Math.round(cur.frozen.at)+" ms":"✓ გადარჩი"):"✗ ბურსტი მოგხვდა — აქ Frozen სჭირდებოდა"):cur.cancelled?(ok?"✓ ფეიკი იყო — Flicker შეინახე":"✗ ფეიკი იყო — Flicker ტყუილად დახარჯე"):ok?("✓ გადარჩი"+(cur.onset!=null?" · "+Math.round(cur.onset)+" ms":"")+(wasted?" · ⚠ Flicker ზედმეტი იყო (ფეხითაც ასწრებდი)":"")):(cur.geo.t==="ba"?"✗ BA მოგხვდა "+cur.hits+"-ჯერ":(cur.onset==null?"✗ არ გაინძერი":(!cur.walkOK&&!usedF?"✗ მოგხვდა — ფეხით ვერ ასწრებდი, Flicker სჭირდებოდა":"✗ მოგხვდა")));
+    const txt=th.conceal?(ok?"✓ Conceal — გაქრი, BA ვეღარ გარტყამს · "+Math.round(cur.cc.at)+" ms":(cur.cc&&cur.cc.removed?"✗ Conceal ჩამოგეხსნა ("+(cur.cc.removed==="burn"?"წვა":"BA-ის მომენტი")+") — დაელოდე წვის დასრულებას / BA-ებს შორის დააჭირე":"✗ Conceal არ გამოიყენე")):th.burst?(ok?(cur.frozen?"✓ Frozen — გადარჩი · "+Math.round(cur.frozen.at)+" ms":"✓ გადარჩი"):"✗ ბურსტი მოგხვდა — აქ Frozen სჭირდებოდა"):cur.cancelled?(ok?"✓ ფეიკი იყო — Flicker შეინახე":"✗ ფეიკი იყო — Flicker ტყუილად დახარჯე"):ok?("✓ გადარჩი"+(cur.onset!=null?" · "+Math.round(cur.onset)+" ms":"")+(wasted?" · ⚠ Flicker ზედმეტი იყო (ფეხითაც ასწრებდი)":"")):(cur.geo.t==="ba"?"✗ BA მოგხვდა "+cur.hits+"-ჯერ":(cur.onset==null?"✗ არ გაინძერი":(!cur.walkOK&&!usedF?"✗ მოგხვდა — ფეხით ვერ ასწრებდი, Flicker სჭირდებოდა":"✗ მოგხვდა")));
     msg(txt+(frozenWasted?" · ⚠ Frozen ზედმეტად დახარჯე (გრძელი გადატვირთვა)":""),"");cur=null;k++;setTimeout(()=>{msg("");if(!RUN)return;if(k>=N)fin(false);else go()},1100)}
   function fin(st){cancelAnimationFrame(raf);const ok=tr.filter(x=>x.ok),by={};tr.forEach(x=>{(by[x.type]=by[x.type]||[]).push(x.ok)});
     rec.summary={n:tr.length,success:tr.length?r1(ok.length/tr.length*100):null,onset_med:r1(q(tr.filter(x=>x.onset_ms!=null&&!x.anticipation).map(x=>x.onset_ms),.5)),anticipations:tr.filter(x=>x.anticipation).length,
@@ -317,7 +324,7 @@ const DR={d1:()=>runDrill(D1),d2:()=>runDrill(D2),d3:()=>runDrill(D3)};
 nextDrill=function(){if(!QUEUE.length){SESSION.end=new Date().toISOString();leave();report(SESSION);return}DR[QUEUE.shift()]()};
 
 /* ============ საწყისი გვერდი / პროგრესი ============ */
-const CARDS=[["d1","D1 · დოჯი (11 ტიპი)","სკილშოტები, არეალები, კონუსი, დეში, BA-ის ზონა, ორი ზედიზედ, ფეიკი, აუცილებელი ბურსტი. ფეხით / S2 / Flicker / Frozen — ზედმეტ ხარჯვას ითვლის."],["d2","D2 · კომბოები სიტუაციაში","შენი 9 კომბო: გმირი მართლა გადაადგილდება, სლაიდი სიტუაციის მიხედვით (შენიანები, ბეატრისის ზონა, დაბალი HP, დაცვა, გაქცეული მტერი)."],["d3","D3 · საჩვენებელი თითები","ორივე ცერა დაჭერილია, საჩვენებელით $/KDA/სიგნალები/მინიმაპი."]];
+const CARDS=[["d1","D1 · დოჯი (12 ტიპი)","სკილშოტები, არეალები, კონუსი, დეში, BA-ის ზონა, ორი ზედიზედ, ფეიკი, ბურსტი, Conceal-ით გაქცევა. ფეხით / S2 / Flicker / Frozen / Conceal — ზედმეტ ხარჯვას ითვლის."],["d2","D2 · კომბოები სიტუაციაში","შენი 9 კომბო: გმირი მართლა გადაადგილდება, სლაიდი სიტუაციის მიხედვით (შენიანები, ბეატრისის ზონა, დაბალი HP, დაცვა, გაქცეული მტერი)."],["d3","D3 · საჩვენებელი თითები","ორივე ცერა დაჭერილია, საჩვენებელით $/KDA/სიგნალები/მინიმაპი."]];
 function render(){const c=$("cards");c.innerHTML="";fsCheck();CARDS.forEach(([id,n,sub])=>{const S=DB.sessions.flatMap(s=>s.drills).filter(d=>d.drill===id&&d.summary);const last=S[S.length-1];
   const d=document.createElement("div");d.className="card";d.innerHTML="<b>"+n+"</b><small>"+sub+"</small><span class='st'>"+(last?"ბოლო: "+line(id,last.summary):"ჯერ არა")+" · სესია "+S.length+"</span>";
   const b=document.createElement("button");b.textContent="▶";b.className="go";b.style.float="right";b.onclick=()=>{if($("pain").value>=2&&!confirm("დისკომფორტი 2+ — მაინც გავაგრძელო?"))return;newSession([id])};d.appendChild(b);c.appendChild(d)});histTable()}
