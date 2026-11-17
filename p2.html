@@ -74,7 +74,7 @@ function panelScene(img,hero,f,fs){const b={};for(const k in BASE_BTN){const o=B
 SCENES.panelBig=panelScene("hud_panel_big.jpg","panel-big",(x,y)=>[2460-(2460-x)*1.25,y*1.25],1.25);
 SCENES.panelLow=panelScene("hud_panel_low.jpg","panel-low",(x,y)=>[x,y+130],1);
 /* საბაზისო ხაზი (ფაზა 0/1, სრული ეკრანი, 17.11) */
-const VERSION="v4.3 · 17.11 12:00";
+const VERSION="v4.4 · 17.11 13:30";
 const BASELINE={react_ms:345,index_ms:717,thumb_ms:601,flicker_press_ms:678,combo_total_ms:2638,angle_deg:5.4,gesture_ok:0.96};
 /* გიორგის კომბოები (17.11.2026, ✅ გიორგი). dir = სლაიდი, tap = ტაპი, f = „&“ (სწრაფად), wait = განზრახ მოლოდინი */
 const COMBOS=[
@@ -249,7 +249,11 @@ const C3=[
  {h:"ატლასი",n:"S2→Ult→S1",st:[{k:"s2",t:"E",mv:"dash"},{k:"ult",t:"THROW",thr:1},{k:"s1"}]},
  {h:"ატლასი",n:"S2→Flicker&Ult→S1",st:[{k:"s2",t:"E",mv:"dash"},{k:"spell",t:"E",mv:"flick"},{k:"ult",t:"THROW",thr:1,f:1},{k:"s1"}]},
  {h:"მინოტავრი",n:"S1&Flicker→Ult→S1→S2",st:[{k:"s1",t:"E",mv:"jump"},{k:"spell",t:"E",mv:"flick",f:1},{k:"ult",stun:1},{k:"s1",t:"E",mv:"jump"},{k:"s2"}]},
- {h:"მინოტავრი",n:"S1→Ult→(მე-3 დახტომა)→Flicker→S1→S2",st:[{k:"s1",t:"E",mv:"jump"},{k:"ult",stun:1},{k:"spell",t:"CHASE",mv:"flick",wait:1500},{k:"s1",t:"E",mv:"jump"},{k:"s2"}]}];
+ {h:"მინოტავრი",n:"S1→Ult→(მე-3 დახტომა)→Flicker→S1→S2",st:[{k:"s1",t:"E",mv:"jump"},{k:"ult",stun:1},{k:"spell",t:"CHASE",mv:"flick",wait:900},{k:"s1",t:"E",mv:"jump"},{k:"s2"}]}];
+/* ფაზა 4 (G-4/RT-028/035): ანიმაციის „ჩაკეტვა“ = წინა ნაბიჯის აშვებიდან რამდენ ms-ში ხდება შემდეგი დაჭერა ქმედითი.
+   📹 Giorgi-ს კომბო-ვიდეოები 17.11 12:09–12:21 (~60 fps, ±30 ms). 🟡 = მიახლოებითი. */
+const LOCK={"კაჯა":{s1:0,s2:330,ult:500,spell:50},"ატლასი":{s2:380,s1:300,ult:70,spell:50},"მინოტავრი":{s1:200,ult:0,spell:50,s2:0}};
+const lockOf=(h,k)=>(LOCK[h]||{})[k]||0;
 const STEPNAME={s1:"S1",s2:"S2",ult:"Ult",spell:"Flicker",atk:"შეტევა"};
 const MV={dash:230,flick:170,jump:260};
 const V2=(x,y)=>({x,y}),add=(p,v,k=1)=>V2(p.x+v.x*k,p.y+v.y*k),sub=(a,b)=>V2(a.x-b.x,a.y-b.y),len=v=>Math.hypot(v.x,v.y),unit=v=>{const l=len(v)||1;return V2(v.x/l,v.y/l)},rot=(v,a)=>V2(v.x*Math.cos(a)-v.y*Math.sin(a),v.x*Math.sin(a)+v.y*Math.cos(a));
@@ -283,7 +287,7 @@ function D2(){const lay=SESSION.lay,heroF=SESSION.hero;const list=C3.map((c,i)=>
   ready("D2 · კომბოები: ზემოთ — გმირი და კომბო, ქვემოთ — სიტუაცია. გმირი ყოველ ნახტომზე მართლა გადაადგილდება",false,go);
   function lvl(ci){return DB.adapt.d2_level["v3_"+ci]||"guided"}
   function go(){const p=plan[k];if(SCENES[p.scene]!==SC){SC=SCENES[p.scene];$("bg").src=SC.img}const cb=C3[p.ci];
-    c={ci:p.ci,scene:SC.hero,si:0,steps:[],mis:[],early:0,level:lvl(p.ci),limit:Math.round(DB.adapt.d2_step*cb.st.length),sit:makeSit(cb)};c.sit0=JSON.parse(JSON.stringify(c.sit));
+    c={ci:p.ci,scene:SC.hero,si:0,steps:[],mis:[],early:0,level:lvl(p.ci),limit:Math.round(DB.adapt.d2_step*cb.st.length+cb.st.slice(0,-1).reduce((a,x)=>a+lockOf(cb.h,x.k),0)),lockUntil:0,early_lock:0,sit:makeSit(cb)};c.sit0=JSON.parse(JSON.stringify(c.sit));
     drawSit(c.sit,cb);hdr(cb,-1);$("prog").textContent="D2 "+(k+1)+"/"+N+" · "+(c.level==="guided"?"მითითებით":"მეხსიერებით")+" · ლიმიტი "+(c.limit/1000).toFixed(1)+" წმ"+(SC.hero==="Kalea-v2A"?" · v2A":"");
     msg("შენ ხარ "+cb.h+" · "+cb.n,(SITTXT[c.sit.type]?"⚠ "+SITTXT[c.sit.type]+" · ":"")+"↗ = სლაიდი · • = ტაპი");
     setTimeout(()=>{if(!RUN||!c)return;msg("");step()},2600)}
@@ -297,7 +301,7 @@ function D2(){const lay=SESSION.lay,heroF=SESSION.hero;const list=C3.map((c,i)=>
   function apply(st,dir){const s=c.sit;if(st.mv&&dir){const u=unit(dir);let d=MV[st.mv];if(st.t==="E"&&st.mv!=="flick")d=Math.min(d,Math.max(0,len(sub(s.E,s.H))-45));const old=s.H;s.H=clampP(add(s.H,u,d));if(s.grabbed)s.E=clampP(add(s.E,sub(s.H,old)))}
     if(st.grab)s.grabbed=true;if(st.thr&&dir){s.E=clampP(add(s.H,unit(dir),190));s.grabbed=false}}
   function on(kind,e,HT){if(!c||c.stepT==null&&!c.waiting)return;for(const t of e.changedTouches){const p=toI(t.clientX,t.clientY);
-    if(kind==="down"){if(isJoy(p))continue;if(c.active)continue;if(c.waiting){c.early++;continue}const st=C3[c.ci].st[c.si],b=SC.btn[st.k];
+    if(kind==="down"){if(isJoy(p))continue;if(c.active)continue;if(c.waiting){c.early++;continue}const st=C3[c.ci].st[c.si],b=SC.btn[st.k];if(HT<c.lockUntil&&dist(p,b)<=b.r*1.15){c.early_lock++;c.steps.length&&(c.steps[c.steps.length-1].next_early=(c.steps[c.steps.length-1].next_early||0)+1);msg("⏳ ნაადრევი — წინა სკილის ანიმაცია ჯერ არ დასრულებულა (თამაშში ეს დაჭერა დაიკარგებოდა)","");setTimeout(()=>{if(c&&!c.active)msg("")},700);continue}
       if(dist(p,b)<=b.r*1.15){c.active={id:t.identifier,p,t:HT};if(st.t){const h=toS(c.sit.H);c.aim=el("aim",h.x,h.y);c.aim.style.width="0px"}}
       else{let best=null,bd=9;for(const kk of ["s1","s2","ult","spell","atk"]){const d=dist(p,SC.btn[kk])/SC.btn[kk].r;if(d<bd){bd=d;best=kk}}c.mis.push({step:c.si,exp:st.k,landed:bd<=1.15?best:"none"})}}
     if(kind==="move"&&c.active&&c.aim&&t.identifier===c.active.id){const v=sub(p,c.active.p),L=len(v)*G.s;c.aim.style.width=Math.min(220,L*2.2)+"px";c.aim.style.transform="rotate("+Math.atan2(v.y,v.x)+"rad)";continue}
@@ -307,17 +311,18 @@ function D2(){const lay=SESSION.lay,heroF=SESSION.hero;const list=C3.map((c,i)=>
       c.steps.push({k:st.k,input:st.t?"dir":"tap",target:st.t||null,sit:c.sit.type,fast:!!st.f,wait:!!st.wait,press_ms:r1(a.t-c.stepT),release_ms:r1(HT-c.stepT),drag_pt:r1(L),angle_err_deg:ae,tol:st.t?c.want.tol:null,ok});
       if(!ok){const why=st.t?(L<20?"ეს სლაიდით უნდა — ტაპი იყო":"მიმართულება: "+Math.round(ae)+"° აცდენა (მწვანე = სწორი)"):"ეს ტაპია — სლაიდი არ სჭირდება";msg("✗ "+STEPNAME[st.k]+": "+why,"");
         if(st.t){const h=toS(c.sit.H),g=el("tarrow",h.x,h.y);g.style.width="110px";g.style.transform="rotate("+Math.atan2(c.want.v.y,c.want.v.x)+"rad)";g.style.filter="hue-rotate(80deg)"}}
+      c.lockUntil=HT+lockOf(cb.h,st.k);if(lockOf(cb.h,st.k)>=150&&c.si<cb.st.length-1){const bb=SC.btn[cb.st[c.si+1].k],q2=toS(bb),rr=bb.r*G.s;const lk=el("ring",q2.x-rr,q2.y-rr);lk.style.cssText+=";width:"+2*rr+"px;height:"+2*rr+"px;border-color:#888;background:rgba(0,0,0,.45);transition:opacity "+lockOf(cb.h,st.k)+"ms linear";requestAnimationFrame(()=>lk.style.opacity=0);setTimeout(()=>lk.remove(),lockOf(cb.h,st.k))}
       apply(st,st.t&&L>=20?v:(st.t?c.want.v:null));
       c.si++;const nextFn=()=>{if(!c)return;if(!ok)msg("");if(c.si>=cb.st.length)done(HT);else step()};if(!ok)setTimeout(nextFn,900);else nextFn()}}}
   function done(HT){const cb=C3[c.ci];const active=c.steps.reduce((x,y)=>x+y.release_ms,0);const clean=c.steps.every(x=>x.ok)&&!c.mis.length,inTime=active<=c.limit,ok=clean&&inTime;
-    tr.push({ci:c.ci,hero:cb.h,combo:cb.n,scene:c.scene,level:c.level,sit:c.sit0.type,limit_ms:c.limit,active_ms:r1(active),ok,clean,in_time:inTime,steps:c.steps,misclicks:c.mis,early:c.early});
+    tr.push({ci:c.ci,hero:cb.h,combo:cb.n,scene:c.scene,level:c.level,sit:c.sit0.type,limit_ms:c.limit,active_ms:r1(active),ok,clean,in_time:inTime,steps:c.steps,misclicks:c.mis,early:c.early,early_lock:c.early_lock});
     if(ok)DB.adapt.d2_step=Math.max(250,DB.adapt.d2_step*0.95);else DB.adapt.d2_step=Math.min(1400,DB.adapt.d2_step*1.10);
     const same=tr.filter(x=>x.ci===c.ci&&x.level==="guided").slice(-3);if(c.level==="guided"&&same.length===3&&same.every(x=>x.clean))DB.adapt.d2_level["v3_"+c.ci]="memory";
     $("hdr").innerHTML="";$("hint").innerHTML="";$("sit").textContent="";msg(ok?"✓ "+(active/1000).toFixed(2)+" წმ":(clean?"⏱ "+(active/1000).toFixed(2)+" / "+(c.limit/1000).toFixed(1)+" წმ":"✗ კომბოში შეცდომა იყო"),"");c=null;k++;
     setTimeout(()=>{msg("");if(!RUN)return;if(k>=N)fin(false);else go()},1000)}
   function fin(st){const S=tr.flatMap(x=>x.steps),ang=S.filter(x=>x.angle_err_deg!=null).map(x=>x.angle_err_deg),fl=S.filter(x=>x.k==="spell"&&!x.wait).map(x=>x.press_ms);
     const bySit={};tr.forEach(x=>{(bySit[x.sit]=bySit[x.sit]||[]).push(x.clean)});
-    rec.summary={n:tr.length,clean:tr.length?r1(tr.filter(x=>x.clean).length/tr.length*100):null,in_time:r1(tr.filter(x=>x.ok).length/Math.max(1,tr.length)*100),active_med:r1(q(tr.map(x=>x.active_ms),.5)),angle_med:r1(q(ang,.5)),flicker_press_med:r1(q(fl,.5)),gesture_ok:r1(S.filter(x=>x.ok).length/Math.max(1,S.length)*100),misclicks:tr.reduce((x,y)=>x+y.misclicks.length,0),step_limit_end:Math.round(DB.adapt.d2_step),
+    rec.summary={n:tr.length,clean:tr.length?r1(tr.filter(x=>x.clean).length/tr.length*100):null,in_time:r1(tr.filter(x=>x.ok).length/Math.max(1,tr.length)*100),active_med:r1(q(tr.map(x=>x.active_ms),.5)),angle_med:r1(q(ang,.5)),flicker_press_med:r1(q(fl,.5)),gesture_ok:r1(S.filter(x=>x.ok).length/Math.max(1,S.length)*100),misclicks:tr.reduce((x,y)=>x+y.misclicks.length,0),early_lock:tr.reduce((x,y)=>x+(y.early_lock||0),0),step_limit_end:Math.round(DB.adapt.d2_step),
       by_sit:Object.fromEntries(Object.entries(bySit).map(([k2,v])=>[k2,r1(v.filter(Boolean).length/v.length*100)]))};
     if(lay==="both"){["Kalea","Kalea-v2A"].forEach(sc=>{const a=tr.filter(x=>x.scene===sc),s2=a.flatMap(x=>x.steps);rec.summary[sc]={n:a.length,clean:a.length?r1(a.filter(x=>x.clean).length/a.length*100):null,active_med:r1(q(a.map(x=>x.active_ms),.5)),angle_med:r1(q(s2.filter(x=>x.angle_err_deg!=null).map(x=>x.angle_err_deg),.5)),gesture_ok:r1(s2.filter(x=>x.ok).length/Math.max(1,s2.length)*100)}})}
     drillDone(rec,st)}
