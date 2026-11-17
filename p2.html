@@ -54,9 +54,10 @@ table{border-collapse:collapse;width:100%;font-size:12px}td,th{padding:3px 6px;b
     <label>დისკომფორტი <select id="pain"><option>0</option><option>1</option><option>2</option><option>3</option></select></label>
     <label>განლაგება (D2) <select id="lay"><option value="kalea">ახლანდელი (v1)</option><option value="both">v1 + v2A შერეული (შეჩვევის ტრეკი)</option><option value="kaleaA">მხოლოდ v2A</option></select></label>
     <label>პანელი (D3) <select id="lay3"><option value="kalea">ახლანდელი (v1)</option><option value="all">სამივე შერეული (v1 / დიდი / ქვემოთ)</option><option value="panelBig">მხოლოდ დიდი</option><option value="panelLow">მხოლოდ ქვემოთ</option></select></label>
+    <label>კამერა (D4) <select id="camdir"><option value="same">თითის მიმართულებით</option><option value="inv">საპირისპიროდ</option></select></label><label>სიჩქარე (D4) <select id="camg"><option>1.5</option><option selected>2.5</option><option>4</option></select></label>
     <label>გმირი (D2) <select id="hero"><option value="all">ყველა</option><option>კაჯა</option><option>ატლასი</option><option>მინოტავრი</option></select></label></div>
   <div class="grid" id="cards"></div>
-  <div class="row"><button class="go" id="b_full">▶ სრული სესია (~6 წთ: D1 → D2 → D3)</button><button id="b_copy">📋 JSON</button><button id="b_txt">📄 ტექსტად</button><button id="b_clr">🗑</button><a href="p1.html" style="color:var(--teal)">← ფაზა 1</a><span class="st" id="saved"></span></div>
+  <div class="row"><button class="go" id="b_full">▶ სრული სესია (~8 წთ: D1 → D2 → D3 → D4)</button><button id="b_copy">📋 JSON</button><button id="b_txt">📄 ტექსტად</button><button id="b_clr">🗑</button><a href="p1.html" style="color:var(--teal)">← ფაზა 1</a><span class="st" id="saved"></span></div>
   <div id="report"></div>
 </section>
 <section id="test" class="scr"><img id="bg" alt=""><div id="ov"></div><div id="msg"></div><div id="hdr"></div><div id="sit"></div><div id="hint"></div><div id="prog"></div><button id="stop">STOP</button></section>
@@ -73,7 +74,7 @@ function panelScene(img,hero,f,fs){const b={};for(const k in BASE_BTN){const o=B
 SCENES.panelBig=panelScene("hud_panel_big.jpg","panel-big",(x,y)=>[2460-(2460-x)*1.25,y*1.25],1.25);
 SCENES.panelLow=panelScene("hud_panel_low.jpg","panel-low",(x,y)=>[x,y+130],1);
 /* საბაზისო ხაზი (ფაზა 0/1, სრული ეკრანი, 17.11) */
-const VERSION="v3.6 · 17.11 08:30";
+const VERSION="v3.7 · 17.11 09:30";
 const BASELINE={react_ms:345,index_ms:717,thumb_ms:601,flicker_press_ms:678,combo_total_ms:2638,angle_deg:5.4,gesture_ok:0.96};
 /* გიორგის კომბოები (17.11.2026, ✅ გიორგი). dir = სლაიდი, tap = ტაპი, f = „&“ (სწრაფად), wait = განზრახ მოლოდინი */
 const COMBOS=[
@@ -90,7 +91,7 @@ const COMBOS=[
 const $=id=>document.getElementById(id),now=()=>performance.now(),r1=x=>x==null?null:Math.round(x*10)/10;
 const q=(a,p)=>{if(!a.length)return null;const s=[...a].sort((x,y)=>x-y);return s[Math.min(s.length-1,Math.floor(p*s.length))]};
 const shuffle=a=>{for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a};
-let DB;function blank(){return{schema_version:SCHEMA,created:new Date().toISOString(),sessions:[],adapt:{d1_T:700,d2_step:700,d2_level:{},d3_T:1400}}}
+let DB;function blank(){return{schema_version:SCHEMA,created:new Date().toISOString(),sessions:[],adapt:{d1_T:700,d2_step:700,d2_level:{},d3_T:1400,d4_hold:600,d4_R:230}}}
 try{DB=JSON.parse(localStorage.getItem("rl_p2"))||blank()}catch(e){DB=blank()}if(DB.schema_version!==SCHEMA)DB=blank();
 function save(){try{localStorage.setItem("rl_p2",JSON.stringify(DB));$("saved").textContent="შენახულია ✓"}catch(e){$("saved").textContent="შენახვა ვერ მოხერხდა — JSON გაიტანე"}}
 /* გეომეტრია */
@@ -320,11 +321,66 @@ function D3(){const L3=$("lay3").value,ROT=L3==="all"?["kalea","panelBig","panel
   function fin(st){const ok=tr.filter(x=>x.ok);const byT={};tr.forEach(x=>{(byT[x.target]=byT[x.target]||[]).push(x.ok)});const byP={};tr.forEach(x=>{const kk=x.panel||'Kalea';(byP[kk]=byP[kk]||{all:[],shop:[],rt:[]});byP[kk].all.push(x.ok);if(x.target==='shop')byP[kk].shop.push(x.ok);if(x.ok)byP[kk].rt.push(x.rt_ms)});rec.summary={by_panel:Object.fromEntries(Object.entries(byP).map(([a,b])=>[a,{success:Math.round(b.all.filter(Boolean).length/b.all.length*100),shop:b.shop.length?Math.round(b.shop.filter(Boolean).length/b.shop.length*100)+'% ('+b.shop.length+')':'—',rt_med:r1(q(b.rt,.5))}])),by_target:Object.fromEntries(Object.entries(byT).map(([a,b])=>[a,Math.round(b.filter(Boolean).length/b.length*100)+'% ('+b.length+')'])),n:tr.length,success:tr.length?r1(ok.length/tr.length*100):null,rt_med:r1(q(ok.map(x=>x.rt_ms),.5)),thumb_lifts:tr.filter(x=>x.why==="thumb_lift").length,window_end:Math.round(DB.adapt.d3_T)};drillDone(rec,st)}
   RUN={on,finish:fin}}
 
+/* ============ D4 · კამერა / მინიმაპი (G-5, RT-021/022/023) ============
+   Giorgi (17.11): მარცხენა საჩვენებელი — პირდაპირ მინიმაპზე (დადება/სრიალი); მარჯვენა საჩვენებელი — სკილებსა და სქორბორდს შორის თავისუფალ ზონაში კამერის გაწევა; სირთულე = იდეალურ კადრზე თითის გაჩერება.
+   🟡 ჩემი დაშვებები: თითის აშვებისას კამერა გმირს უბრუნდება; მიმართულება და სიჩქარე (gain) — პარამეტრებიდან. */
+const FZ=[1700,130,2330,620],FC={x:1288,y:560},MAPC={x:340,y:205},MS=7;
+function D4(){enter("kalea");const A=DB.adapt;if(A.d4_hold==null){A.d4_hold=600;A.d4_R=230}
+  const N=SESSION.mode==="warm"?6:12,tr=[],dirS=$("camdir").value==="inv"?-1:1,gain=+$("camg").value;let k=0,cur=null,raf=0,ask=null;
+  const TY=shuffle(Array.from({length:N},(_,i)=>i%2?"map":"drag"));
+  const rec={drill:"d4",name:"D4 · კამერა / მინიმაპი",ver:1,trials:tr,cam_dir:$("camdir").value,cam_gain:gain};
+  ready("D4 · ორივე ცერა ეკრანზე. 🟡 მინიმაპზე ნიშანი → მარცხენა საჩვენებელი. ისარი კიდეზე → მარჯვენა საჩვენებელით გაწიე კამერა (წყვეტილი ჩარჩო) და გააჩერე, სანამ წრე შეივსება",true,go);
+  function go(){clear();ask=null;$("prog").textContent="D4 "+(k+1)+"/"+N+" · გაჩერება "+Math.round(A.d4_hold)+" ms · კადრი "+Math.round(A.d4_R);
+    setTimeout(()=>{if(!RUN)return;if(!joyTouch()||!thumbR()){msg("ცერა აუშვი — დაადე ორივე თავიდან");RUN.on=()=>{if(joyTouch()&&thumbR()){msg("");RUN.on=on;go()}};return}
+      const type=TY[k],vr=k<Math.ceil(N/3)?"basic":["basic","move","skill"][Math.floor(Math.random()*3)],ang=Math.random()*2*Math.PI,cnt=1+Math.floor(Math.random()*3);let W,ping=null;
+      if(type==="drag"){const d=900+Math.random()*500;W=V2(Math.cos(ang)*d,Math.sin(ang)*d*0.7)}else{const rr=60+Math.random()*100;ping=V2(MAPC.x+Math.cos(ang)*rr,MAPC.y+Math.sin(ang)*rr);W=V2((ping.x-MAPC.x)*MS,(ping.y-MAPC.y)*MS)}
+      const dots=Array.from({length:cnt},()=>V2((Math.random()-.5)*110,(Math.random()-.5)*80));
+      cur={type,vr,vel:vr==="move"?rot(V2(70,0),Math.random()*6.283):null,lt:now(),skShown:null,skHit:null,W,ping,cnt,dots,t0:now(),jid:joyTouch().id,rid:thumbR().id,fid:null,start:null,cam:V2(0,0),inT:null,firstIn:null,exits:0,was:false,samples:[],lift:false,rel:0,touches:0};
+      const fz=toS({x:FZ[0],y:FZ[1]}),fz2=toS({x:FZ[2],y:FZ[3]});if(type==="drag"){const z=el("ring",fz.x,fz.y);z.style.cssText+=";border-radius:12px;border-style:dashed;border-color:var(--teal);box-shadow:none;opacity:.45;width:"+(fz2.x-fz.x)+"px;height:"+(fz2.y-fz.y)+"px"}
+      else ring({x:ping.x,y:ping.y,r:22},"");
+      cur.fr=el("ring",0,0);cur.fr.style.borderStyle="dashed";cur.fr.style.boxShadow="none";cur.fill=el("ring",0,0);cur.fill.style.borderColor="var(--teal)";cur.fill.style.boxShadow="none";
+      cur.dEl=dots.map(()=>{const d=el("ring",0,0);d.style.cssText+=";border:0;background:#e5484d;box-shadow:0 0 8px #e5484d";return d});cur.arr=el("num",0,0,"➤");cur.arr.style.background="#e5484d";cur.arr.style.color="#fff";
+      msg((type==="drag"?"კამერა: ისრის მიმართულებით":"მინიმაპი: ნიშანზე")+(vr==="move"?" · ბრძოლა მოძრაობს":vr==="skill"?" · კადრში რგოლი გამოჩნდება → S1 მარჯვენა ცერით":""),"");cur.timer=setTimeout(()=>fin1(false,"timeout"),7000);raf=requestAnimationFrame(loop)},500+Math.random()*900)}
+  const scr=()=>V2(FC.x+cur.W.x-cur.cam.x,FC.y+cur.W.y-cur.cam.y);
+  function upd(){const f=cur.fid!=null&&ACT.get(cur.fid);if(!f){cur.cam=V2(0,0);return}const p=toI(f.x,f.y);
+    cur.cam=cur.type==="drag"?V2(dirS*gain*(p.x-cur.start.x),dirS*gain*(p.y-cur.start.y)):V2((p.x-MAPC.x)*MS,(p.y-MAPC.y)*MS)}
+  function loop(){if(!cur)return;const T=now();if(cur.vel){const dt=(T-cur.lt)/1000;cur.W=add(cur.W,cur.vel,dt)}cur.lt=T;upd();const s=scr(),R=A.d4_R,inside=dist(s,FC)<=R;
+    if(cur.vr==="skill"&&inside&&cur.was&&!cur.skShown&&T-cur.inT>=A.d4_hold*0.3){cur.skShown=T;cur.exAtSk=cur.exits;ring(SC.btn.s1,"S1")}
+    if(inside){if(!cur.was){if(cur.firstIn==null)cur.firstIn=T;cur.inT=T;cur.was=true;cur.samples=[]}cur.samples.push(s);if(T-cur.inT>=A.d4_hold&&(cur.vr!=="skill"||cur.skHit!=null)){fin1(true,"ok");return}}
+    else{if(cur.was){cur.exits++;cur.was=false;cur.inT=null}if(cur.firstIn!=null)cur.lost=(cur.lost||0)+(T-(cur.pl||T))}cur.pl=T;
+    const c=toS(FC),rr=R*G.s;Object.assign(cur.fr.style,{left:c.x-rr+"px",top:c.y-rr+"px",width:2*rr+"px",height:2*rr+"px"});
+    const pr=cur.was?Math.min(1,(T-cur.inT)/A.d4_hold):0,fr=rr*pr;Object.assign(cur.fill.style,{left:c.x-fr+"px",top:c.y-fr+"px",width:2*fr+"px",height:2*fr+"px",opacity:pr?1:0});
+    const on=s.x>120&&s.x<IW-120&&s.y>60&&s.y<IH-60;cur.dEl.forEach((d,i)=>{const q=toS(add(s,cur.dots[i])),r=14*G.s;Object.assign(d.style,{left:q.x-r+"px",top:q.y-r+"px",width:2*r+"px",height:2*r+"px",display:on?"block":"none"})});
+    if(!on){const v=unit(sub(s,FC)),e=toS(V2(Math.max(160,Math.min(IW-160,FC.x+v.x*1100)),Math.max(90,Math.min(IH-90,FC.y+v.y*520))));Object.assign(cur.arr.style,{left:e.x+"px",top:e.y+"px",display:"block",transform:"rotate("+Math.atan2(v.y,v.x)+"rad)"})}else cur.arr.style.display="none";
+    raf=requestAnimationFrame(loop)}
+  function on(kind,e,HT){
+    if(ask){if(kind!=="down")return;for(const t of e.changedTouches){const p=toI(t.clientX,t.clientY);for(let i=0;i<3;i++)if(dist(p,V2(FC.x+(i-1)*220,FC.y))<=95){const x=tr[tr.length-1];x.count_ok=(i+1)===ask;x.count_said=i+1;msg(x.count_ok?"✓ სწორია":"✗ იყო "+ask,"");ask=null;next();return}}return}
+    if(!cur)return;
+    if(kind==="up"){for(const t of e.changedTouches){if(t.identifier===cur.jid||(t.identifier===cur.rid&&!(cur.vr==="skill"&&cur.skShown)))cur.lift=true;if(t.identifier===cur.fid){cur.fid=null;cur.rel++;cur.cam=V2(0,0)}}return}
+    if(kind!=="down")return;
+    for(const t of e.changedTouches){const p0=toI(t.clientX,t.clientY);if(cur.skShown&&cur.skHit==null&&t.identifier!==cur.fid&&dist(p0,SC.btn.s1)<=SC.btn.s1.r*1.25){cur.skHit=HT-cur.skShown;cur.rid=t.identifier;continue}
+      if(t.identifier===cur.jid||t.identifier===cur.rid||cur.fid!=null)continue;const p=toI(t.clientX,t.clientY);cur.touches++;
+      if(cur.type==="drag"&&p.x>=FZ[0]-40&&p.x<=FZ[2]+40&&p.y>=FZ[1]-40&&p.y<=FZ[3]+40){cur.fid=t.identifier;cur.start=p;if(cur.acq0==null)cur.acq0=HT-cur.t0}
+      else if(cur.type==="map"&&dist(p,MAPC)<=210){cur.fid=t.identifier;if(cur.acq0==null)cur.acq0=HT-cur.t0}}}
+  function fin1(ok,why){if(!cur)return;cancelAnimationFrame(raf);clearTimeout(cur.timer);const T=now();if(ok&&cur.lift)ok=false,why="thumb_lift";
+    const S=cur.samples,mx=S.reduce((a,p)=>a+p.x,0)/(S.length||1),my=S.reduce((a,p)=>a+p.y,0)/(S.length||1),jit=S.length?S.reduce((a,p)=>a+Math.hypot(p.x-mx,p.y-my),0)/S.length:null;
+    tr.push({type:cur.type,variant:cur.vr,skill_ms:cur.skHit!=null?r1(cur.skHit):null,lost_on_skill:cur.skShown?cur.exits-cur.exAtSk:null,ok,why,lost_ms:r1(cur.lost||0),total_ms:r1(T-cur.t0),touch_ms:cur.acq0!=null?r1(cur.acq0):null,acq_ms:cur.firstIn!=null?r1(cur.firstIn-cur.t0):null,exits:cur.exits,releases:cur.rel,jitter:jit!=null?r1(jit):null,extra_touches:Math.max(0,cur.touches-1),hold_ms:Math.round(A.d4_hold),R:Math.round(A.d4_R),cnt:cur.cnt,count_ok:null});
+    const last2=tr.slice(-2);if(ok&&last2.length===2&&last2.every(x=>x.ok)){A.d4_hold=Math.min(1200,A.d4_hold*1.1);A.d4_R=Math.max(140,A.d4_R*0.93)}else if(!ok){A.d4_hold=Math.max(500,A.d4_hold*0.92);A.d4_R=Math.min(300,A.d4_R*1.1)}
+    const cnt=cur.cnt;cur=null;clear();
+    if(ok){ask=cnt;for(let i=0;i<3;i++)ring({x:FC.x+(i-1)*220,y:FC.y,r:85},String(i+1));msg("რამდენი მტერი იყო?","დააჭირე 1 / 2 / 3");return}
+    msg(({timeout:cur===null&&tr.at(-1).variant==="skill"&&tr.at(-1).skill_ms==null?"⏱ S1 არ დააჭირე":"⏱ დრო ამოიწურა",thumb_lift:"✗ ცერა აუშვი"})[why]||"✗","");next()}
+  function next(){k++;setTimeout(()=>{msg("");if(!RUN)return;if(k>=N)fin(false);else go()},700)}
+  function fin(st){cancelAnimationFrame(raf);cur=null;const med=a=>r1(q(a.filter(x=>x!=null),.5)),by={};
+    ["drag","map"].forEach(t=>{const a=tr.filter(x=>x.type===t);if(!a.length)return;const o=a.filter(x=>x.ok);by[t]={n:a.length,success:Math.round(o.length/a.length*100),total_med:med(o.map(x=>x.total_ms)),touch_med:med(a.map(x=>x.touch_ms)),exits:a.reduce((s,x)=>s+x.exits,0),lost_med:med(a.map(x=>x.lost_ms)),releases:a.reduce((s,x)=>s+x.releases,0),jitter_med:med(o.map(x=>x.jitter))}});
+    const byV={};["basic","move","skill"].forEach(v=>{const a=tr.filter(x=>x.variant===v);if(a.length)byV[v]={n:a.length,success:Math.round(a.filter(x=>x.ok).length/a.length*100),total_med:med(a.filter(x=>x.ok).map(x=>x.total_ms))}});const sk=tr.filter(x=>x.variant==="skill");
+    const c=tr.filter(x=>x.count_ok!=null);rec.summary={by_variant:byV,skill_med:med(sk.map(x=>x.skill_ms)),lost_on_skill:sk.reduce((a,x)=>a+(x.lost_on_skill||0),0),n:tr.length,success:tr.length?r1(tr.filter(x=>x.ok).length/tr.length*100):null,total_med:med(tr.filter(x=>x.ok).map(x=>x.total_ms)),by_type:by,count_acc:c.length?Math.round(c.filter(x=>x.count_ok).length/c.length*100):null,thumb_lifts:tr.filter(x=>x.why==="thumb_lift").length,hold_end:Math.round(A.d4_hold),R_end:Math.round(A.d4_R)};drillDone(rec,st)}
+  RUN={on,finish:fin}}
+
 /* მარტივი გზა: drill-ები RUN-ს ბოლოს აყენებენ; მზადყოფნა ცალკე ობიექტია */
 function runDrill(fn){let pending=null;const orig=ready;ready=(t,n,cb)=>{pending={t,n,cb}};fn();const drillRun=RUN;ready=orig;
   if(pending){msg(pending.t,pending.n?"მარცხენა ცერა — ჯოისტიკზე, მარჯვენა ცერა — შეტევის ღილაკზე, და გააჩერე":"მარცხენა ცერა დადე ჯოისტიკზე და გააჩერე");ring(SC.btn.joy,"",true);if(pending.n)ring(SC.btn.atk,"",true);
     const chk=()=>{if(RUN&&RUN.isReady&&joyTouch()&&(!pending.n||thumbR())){RUN=drillRun;clear();msg("");setTimeout(pending.cb,500)}};RUN={isReady:true,on:chk,finish:drillRun.finish};setTimeout(chk,400)}}
-const DR={d1:()=>runDrill(D1),d2:()=>runDrill(D2),d3:()=>runDrill(D3)};
+const DR={d1:()=>runDrill(D1),d2:()=>runDrill(D2),d3:()=>runDrill(D3),d4:()=>runDrill(D4)};
 nextDrill=function(){if(!QUEUE.length){SESSION.end=new Date().toISOString();leave();report(SESSION);return}DR[QUEUE.shift()]()};
 
 
@@ -332,9 +388,10 @@ nextDrill=function(){if(!QUEUE.length){SESSION.end=new Date().toISOString();leav
 const pq=(a,p)=>{if(!a.length)return null;const s=[...a].sort((x,y)=>x-y);return s[Math.min(s.length-1,Math.floor(p*s.length))]};
 function seriesOf(d){if(d.drill==="d1")return{t:d.trials.filter(x=>x.ok&&x.onset_ms!=null&&!x.anticipation).map(x=>x.onset_ms),ok:d.trials.map(x=>x.ok),tr:d.trials,rtKey:"onset_ms"};
   if(d.drill==="d3")return{t:d.trials.filter(x=>x.ok).map(x=>x.rt_ms),ok:d.trials.map(x=>x.ok),tr:d.trials,rtKey:"rt_ms"};
+  if(d.drill==="d4")return{t:d.trials.filter(x=>x.ok).map(x=>x.total_ms),ok:d.trials.map(x=>x.ok),tr:d.trials,rtKey:"total_ms"};
   if(d.drill==="d2")return{t:d.trials.map(x=>x.active_ms),ok:d.trials.map(x=>x.clean),tr:d.trials,rtKey:"active_ms"};return null}
 function histMed(drill){const a=DB.sessions.filter(x=>x!==SESSION&&x.mode!=="warm").flatMap(x=>x.drills).filter(x=>x.drill===drill&&(drill!=="d1"||x.ver===2)&&(drill!=="d2"||x.ver===3));const v=a.flatMap(x=>(seriesOf(x)||{t:[]}).t);return v.length>=10?pq(v,.5):null}
-function diagnose(s){const out=[];const BASE={d1:330,d3:BASELINE.index_ms,d2:BASELINE.combo_total_ms};
+function diagnose(s){const out=[];const BASE={d1:330,d3:BASELINE.index_ms,d2:BASELINE.combo_total_ms,d4:3000};
   s.drills.forEach(d=>{const S=seriesOf(d);if(!S||!S.ok.length)return;const n=S.ok.length,succ=S.ok.filter(Boolean).length/n,med=pq(S.t,.5),p90=pq(S.t,.9),iqr=S.t.length>=4?pq(S.t,.75)-pq(S.t,.25):null;
     const ref=histMed(d.drill)||BASE[d.drill],h=Math.floor(n/2),s1=S.ok.slice(0,h).filter(Boolean).length/Math.max(1,h),s2=S.ok.slice(h).filter(Boolean).length/Math.max(1,n-h);
     const m1=pq(S.tr.slice(0,h).map(x=>x[S.rtKey]).filter(x=>x!=null),.5),m2=pq(S.tr.slice(h).map(x=>x[S.rtKey]).filter(x=>x!=null),.5);
@@ -348,17 +405,20 @@ function diagnose(s){const out=[];const BASE={d1:330,d3:BASELINE.index_ms,d2:BAS
       if(fails.length>=3&&moved/fails.length>=.6)tag("AD-3","საფრთხის ამოცნობა / არჩევანი",`შეცდომების ${Math.round(moved/fails.length*100)}% — გაინძერი, მაგრამ არასწორად/არასაკმარისად; ზედმეტი რესურსი ${wr}`,"ჯერ შეხედე ფორმას (ხაზი/წრე/კონუსი) — მერე მოძრაობა");}
     if(d.drill==="d2"){const st=d.trials.flatMap(x=>x.steps).filter(x=>x.input==="dir"),bad=st.filter(x=>!x.ok).length;if(st.length&&bad/st.length>=.25)tag("AD-3","სიტუაციის წაკითხვა (სლაიდის მიმართულება)",`სლაიდების ${Math.round(bad/st.length*100)}% არასწორი`,"მითითებით რეჟიმში დარჩი, სანამ ≥80% არ გახდება");}
     if(d.drill==="d3"){const ms=d.trials.filter(x=>x.why==="miss").length;if(ms/n>=.2)tag("AD-3","სამიზნის ამოცნობა (საჩვენებელი)",`აცდენა ${ms}/${n}`,"ჯერ ზუსტი ადგილი, მერე სისწრაფე");}
-    const mt=d.drill==="d3"?d.trials.filter(x=>x.why==="thumb_lift").length:d.drill==="d2"?d.trials.reduce((a,x)=>a+x.misclicks.length,0):d.trials.filter(x=>x.joy_lifted).length;
+    if(d.drill==="d4"){const c=d.trials.filter(x=>x.count_ok!=null),w=c.filter(x=>!x.count_ok).length;if(c.length>=4&&w/c.length>=.25)tag("AD-3","ინფორმაციის წაკითხვა კადრში",`მტრების რაოდენობა არასწორად ${w}/${c.length}`,"კადრი გააჩერე და ჯერ დაითვალე, მერე აუშვი");
+      ["drag","map"].forEach(t=>{const v=d.trials.filter(x=>x.type===t&&x.ok).map(x=>x.total_ms);if(v.length>=4){const m=pq(v,.5),r=pq(v,.75)-pq(v,.25);if(r/m>=.35)tag("AD-5","არასტაბილური შესრულება ("+(t==="drag"?"კამერა":"მინიმაპი")+")",`IQR ${Math.round(r)} / მედიანა ${Math.round(m)}`,"ნაკლები სირთულე, მეტი ერთგვაროვანი ცდა")}});
+      const ex=d.trials.reduce((a,x)=>a+x.exits+x.releases,0);if(ex/n>=1)tag("AD-7","კადრის გაჩერება",`გადაცდენა/ადრე აშვება ${ex}-ჯერ ${n} ცდაში`,"თითი ნელა მიიტანე და კადრში გაყინე — სისწრაფე მერე");}
+    const mt=d.drill==="d4"?d.trials.filter(x=>x.why==="thumb_lift").length:d.drill==="d3"?d.trials.filter(x=>x.why==="thumb_lift").length:d.drill==="d2"?d.trials.reduce((a,x)=>a+x.misclicks.length,0):d.trials.filter(x=>x.joy_lifted).length;
     if(mt>=2)tag("AD-4","მრავალი თითის ურთიერთხელშეშლა",`${d.drill==="d3"?"ცერის აშვება":d.drill==="d2"?"არასწორი ღილაკი":"ჯოისტიკის აშვება"} ${mt}-ჯერ`,"ტემპი შეანელე, თითები ადგილზე დარჩეს");
-    if(iqr!=null&&med&&iqr/med>=.35)tag("AD-5","არასტაბილური შესრულება",`IQR ${Math.round(iqr)} / მედიანა ${Math.round(med)} = ${Math.round(iqr/med*100)}%`,"ნაკლები სირთულე, მეტი ერთგვაროვანი ცდა");
+    if(d.drill!=="d4"&&iqr!=null&&med&&iqr/med>=.35)tag("AD-5","არასტაბილური შესრულება",`IQR ${Math.round(iqr)} / მედიანა ${Math.round(med)} = ${Math.round(iqr/med*100)}%`,"ნაკლები სირთულე, მეტი ერთგვაროვანი ცდა");
     if(n>=10&&((s1-s2)>=.2||(m1&&m2&&m2>m1*1.15)))tag("AD-6","დაღლილობით ვარდნა",`1-ლი ნახევარი ${Math.round(s1*100)}% → მე-2 ${Math.round(s2*100)}%`+(s.fatigue?` · დაღლილობა ${s.fatigue}/5`:""),"შემდეგ ჯერზე მოკლე სესია ან შესვენება");});
   return out}
 /* ============ საწყისი გვერდი / პროგრესი ============ */
-const CARDS=[["d1","D1 · დოჯი (12 ტიპი)","სკილშოტები, არეალები, კონუსი, დეში, BA-ის ზონა, ორი ზედიზედ, ფეიკი, ბურსტი, Conceal-ით გაქცევა. ფეხით / S2 / Flicker / Frozen / Conceal — ზედმეტ ხარჯვას ითვლის."],["d2","D2 · კომბოები სიტუაციაში","შენი 9 კომბო: გმირი მართლა გადაადგილდება, სლაიდი სიტუაციის მიხედვით (შენიანები, ბეატრისის ზონა, დაბალი HP, დაცვა, გაქცეული მტერი)."],["d3","D3 · საჩვენებელი თითები","ორივე ცერა დაჭერილია, საჩვენებელით $/KDA/სიგნალები/მინიმაპი."]];
+const CARDS=[["d1","D1 · დოჯი (12 ტიპი)","სკილშოტები, არეალები, კონუსი, დეში, BA-ის ზონა, ორი ზედიზედ, ფეიკი, ბურსტი, Conceal-ით გაქცევა. ფეხით / S2 / Flicker / Frozen / Conceal — ზედმეტ ხარჯვას ითვლის."],["d2","D2 · კომბოები სიტუაციაში","შენი 9 კომბო: გმირი მართლა გადაადგილდება, სლაიდი სიტუაციის მიხედვით (შენიანები, ბეატრისის ზონა, დაბალი HP, დაცვა, გაქცეული მტერი)."],["d3","D3 · საჩვენებელი თითები","ორივე ცერა დაჭერილია, საჩვენებელით $/KDA/სიგნალები/მინიმაპი."],["d4","D4 · კამერა / მინიმაპი","ცერები ადგილზე: მარცხენა საჩვენებელი — მინიმაპი, მარჯვენა — კამერის გაწევა თავისუფალ ზონაში. ზომავს: კადრამდე დროს, გადაცდენას, ადრე აშვებას, თითის თრთოლვას, მტრების დათვლას."]];
 function render(){const c=$("cards");c.innerHTML="";fsCheck();CARDS.forEach(([id,n,sub])=>{const S=DB.sessions.flatMap(s=>s.drills).filter(d=>d.drill===id&&d.summary);const last=S[S.length-1];
   const d=document.createElement("div");d.className="card";d.innerHTML="<b>"+n+"</b><small>"+sub+"</small><span class='st'>"+(last?"ბოლო: "+line(id,last.summary):"ჯერ არა")+" · სესია "+S.length+"</span>";
   const b=document.createElement("button");b.textContent="▶";b.className="go";b.style.float="right";b.onclick=()=>{if($("pain").value>=2&&!confirm("დისკომფორტი 2+ — მაინც გავაგრძელო?"))return;newSession([id])};d.appendChild(b);c.appendChild(d)});histTable()}
-function line(id,s){if(id==="d3"&&s.by_panel&&Object.keys(s.by_panel).length>1)return s.success+"% · "+s.rt_med+" ms<br><small>"+Object.entries(s.by_panel).map(x=>x[0]+": "+x[1].success+"%, $ "+x[1].shop+", "+x[1].rt_med+" ms").join(" · ")+"</small>";if(id==="d1")return s.success+"% · რეაქცია "+s.onset_med+" ms"+(s.flicker_wasted!=null?" · ზედმეტი Flicker "+s.flicker_wasted:"")+(s.by_type?"<br><small>"+Object.entries(s.by_type).map(x=>x[0]+": "+x[1]).join(" · ")+"</small>":"");if(id==="d2")return s.clean+"% სუფთა · "+(s.active_med/1000).toFixed(2)+" წმ · "+s.angle_med+"°";return s.success+"% · "+s.rt_med+" ms · ცერა აუშვა "+s.thumb_lifts}
+function line(id,s){if(id==="d3"&&s.by_panel&&Object.keys(s.by_panel).length>1)return s.success+"% · "+s.rt_med+" ms<br><small>"+Object.entries(s.by_panel).map(x=>x[0]+": "+x[1].success+"%, $ "+x[1].shop+", "+x[1].rt_med+" ms").join(" · ")+"</small>";if(id==="d1")return s.success+"% · რეაქცია "+s.onset_med+" ms"+(s.flicker_wasted!=null?" · ზედმეტი Flicker "+s.flicker_wasted:"")+(s.by_type?"<br><small>"+Object.entries(s.by_type).map(x=>x[0]+": "+x[1]).join(" · ")+"</small>":"");if(id==="d2")return s.clean+"% სუფთა · "+(s.active_med/1000).toFixed(2)+" წმ · "+s.angle_med+"°";if(id==="d4")return s.success+"% · "+(s.total_med/1000||0).toFixed(2)+" წმ · დათვლა "+(s.count_acc??"—")+"%"+(s.by_type?"<br><small>"+Object.entries(s.by_type).map(x=>(x[0]==="drag"?"კამერა":"მინიმაპი")+": "+x[1].success+"%, "+x[1].total_med+" ms, გადაცდენა "+x[1].exits+", აშვება "+x[1].releases).join(" · ")+"</small>":"");return s.success+"% · "+s.rt_med+" ms · ცერა აუშვა "+s.thumb_lifts}
 function histTable(){const rows=DB.sessions.slice(-12).reverse().map(s=>"<tr><td>"+s.start.slice(5,16).replace("T"," ")+"</td><td>"+s.drills.map(d=>d.drill.toUpperCase()+": "+(d.summary?line(d.drill,d.summary):"—")+(d.stopped?" (STOP)":"")).join("<br>")+"</td></tr>").join("");
   $("report").innerHTML=rows?"<div class='card' style='margin-top:8px'><b>ისტორია</b><table>"+rows+"</table><p class='st'>საბაზისო ხაზი (ფაზა 1): რეაქცია "+BASELINE.react_ms+" ms · საჩვენებელი "+BASELINE.index_ms+" ms · Flicker "+BASELINE.flicker_press_ms+" ms · კომბო "+(BASELINE.combo_total_ms/1000).toFixed(2)+" წმ · კუთხე "+BASELINE.angle_deg+"°. ms ლაბორატორიისაა (წ11).</p></div>":""}
 function report(s){s.diag=diagnose(s);save();render();const h=s.drills.map(d=>"<tr><td>"+d.name+"</td><td>"+(d.summary?line(d.drill,d.summary):"—")+(d.metrics&&d.metrics.p90!=null?"<br><small>P90 "+Math.round(d.metrics.p90)+(d.metrics.recovery_med!=null?" · შეცდომის მერე "+Math.round(d.metrics.recovery_med):"")+" · ნახევრები "+d.metrics.first_half+"%→"+d.metrics.second_half+"%</small>":"")+"</td><td>"+cmp(d)+"</td></tr>").join("")+
@@ -368,7 +428,7 @@ $("report").innerHTML="<div class='card' style='margin-top:8px'><b>სესი�
 function cmp(d){const s=d.summary;if(!s)return"";if(d.drill==="d1"&&s.onset_med)return dd(s.onset_med,BASELINE.react_ms,"ms");if(d.drill==="d2"&&s.flicker_press_med)return"Flicker "+dd(s.flicker_press_med,BASELINE.flicker_press_ms,"ms")+" · კუთხე "+dd(s.angle_med,BASELINE.angle_deg,"°");if(d.drill==="d3"&&s.rt_med)return dd(s.rt_med,BASELINE.index_ms,"ms");return""}
 function dd(v,b,u){const x=v-b;return "<span class='"+(x<=0?"good":"bad")+"'>"+(x>0?"+":"")+Math.round(x*10)/10+u+" vs საბაზისო</span>"}
 $("pain").onchange=()=>{const s=DB.sessions[DB.sessions.length-1];if(s&&s.pain_end_prompt&&s.pain_end==null){s.pain_end=+$("pain").value;save()}};
-$("b_full").onclick=()=>{if($("pain").value>=2&&!confirm("დისკომფორტი 2+ — მაინც გავაგრძელო?"))return;newSession(["d1","d2","d3"])};
+$("b_full").onclick=()=>{if($("pain").value>=2&&!confirm("დისკომფორტი 2+ — მაინც გავაგრძელო?"))return;newSession(["d1","d2","d3","d4"])};
 $("b_copy").onclick=async()=>{try{await navigator.clipboard.writeText(JSON.stringify(DB));$("saved").textContent="დაკოპირდა ✓"}catch(e){$("saved").textContent="კოპირება ვერ მოხერხდა — ტექსტად"}};
 $("b_txt").onclick=()=>{$("report").innerHTML="<textarea id='jt' readonly style='width:100%;height:160px;font:11px monospace;background:#0a1118;color:#e6eef5;-webkit-user-select:text;user-select:text'></textarea>";$("jt").value=JSON.stringify(DB);$("jt").select()};
 $("b_clr").onclick=()=>{if(confirm("წავშალო ფაზა 2-ის ყველა სესია?")){DB=blank();save();render()}};
