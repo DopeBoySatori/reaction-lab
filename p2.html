@@ -74,7 +74,7 @@ function panelScene(img,hero,f,fs){const b={};for(const k in BASE_BTN){const o=B
 SCENES.panelBig=panelScene("hud_panel_big.jpg","panel-big",(x,y)=>[2460-(2460-x)*1.25,y*1.25],1.25);
 SCENES.panelLow=panelScene("hud_panel_low.jpg","panel-low",(x,y)=>[x,y+130],1);
 /* საბაზისო ხაზი (ფაზა 0/1, სრული ეკრანი, 17.11) */
-const VERSION="v5.8 · 26.11 19:30";
+const VERSION="v5.9 · 26.11 19:45";
 const BASELINE={react_ms:345,index_ms:717,thumb_ms:601,flicker_press_ms:678,combo_total_ms:2638,angle_deg:5.4,gesture_ok:0.96};
 /* გიორგის კომბოები (17.11.2026, ✅ გიორგი). dir = სლაიდი, tap = ტაპი, f = „&“ (სწრაფად), wait = განზრახ მოლოდინი */
 const COMBOS=[
@@ -934,7 +934,7 @@ function D15(){enter("kalea");$("bg").style.visibility="hidden";const W=()=>inne
    გაზომილი Giorgi-ს ჩანაწერიდან (26.11): მიზნობის რგოლი ≈182 px (გამოსახულების სივრცე) 🟡; ✕ ≈(1994,231) r≈90 🟡.
    ჩანაცვლება თამაშის ეკრანზე: სამიზნე კუთხე რგოლზე (თითის კუთხე) — პერსპექტივის მიზეზით რუკის ხაზი არ ემთხვევა.
    Fanny-ს ჯაჭვის ფანჯარა 2 წმ = Moonton ✅. ზღვრები (🟡, Giorgi-ს ჟესტებით დასაკალიბრებელი): TAP ≤250 ms, DOUBLE ≤220 ms, CHORD ≤80 ms. */
-const UB={s1:"S1",s2:"S2",ult:"ULT",spell:"SP",atk:"BA"},U_RING=182,U_X={x:1994,y:231,r:90};
+const UB={s1:"S1",s2:"S2",ult:"ULT",spell:"SPELL",atk:"BA"},U_RING=182,U_X={x:1994,y:231,r:90};
 const U_ARW=a=>"<span style='display:inline-block;transform:rotate("+(-a)+"deg)'>➜</span>";
 function uGen(kind,A){const sk=["s1","s2","ult"],sl=["s1","s2","ult","spell"],tp=["s1","s2","ult","spell","atk"],pick=a=>a[Math.floor(RNG()*a.length)],ang=()=>Math.round(RNG()*24)*15;
   if(kind==="tap")return[{k:"tap",b:pick(tp)}];if(kind==="slide")return[{k:"slide",b:pick(sl),a:ang()}];if(kind==="dbl")return[{k:"dbl",b:pick(sk)}];
@@ -964,7 +964,8 @@ function D16(){enter("kalea");const A=DB.adapt;if(!A.u)A.u={tol:20,trans:{},ghos
     const x=document.getElementById("ux");if(x){const xp=toS(U_X);x.style.borderColor=Math.hypot(sx-xp.x,sy-xp.y)<=U_X.r*G.s*1.1?"#e5484d":"#8fa1b3"}}
   function next(){clearTimeout(tmo);if(pi>=plan.length){fin(false);return}seq={...plan[pi],els:plan[pi].els.map(e=>({...e}))};ei=0;st="preview";clear();drawStrip();
     $("prog").textContent="U · "+({P:"პრიმიტივები",W:"წყვილები",Q:"ქესტები"}[seq.stage])+" "+(pi+1)+"/"+plan.length+" · კუთხე ±"+Math.round(U.tol)+"°";
-    tmo=setTimeout(()=>{st="run";goT=now();lastEnd=goT;readyT=0;arm();drawStrip()},seq.stage==="P"?600:1000)}
+    /* Giorgi 26.11: 3 წმ წინასწარ ჩვენება — წაიკითხე და გაიაზრე, მერე GO */
+    let c=3;const cd=()=>{if(st!=="preview")return;msg(c>0?String(c):"GO","");if(c===0){st="run";goT=now();lastEnd=goT;readyT=0;arm();drawStrip();setTimeout(()=>{if(st==="run")msg("")},300);return}c--;tmo=setTimeout(cd,1000)};cd()}
   function arm(){clearTimeout(tmo);const e=seq.els[ei];if(!e)return done();if(e.k==="delay"){readyT=now()+e.d;const b=B(e.b),p=toS(b),r=b.r*G.s*1.25;const d=el("ring",p.x-r,p.y-r);d.style.cssText+=";width:"+2*r+"px;height:"+2*r+"px;border-color:#3f8cff;box-shadow:none;transition:border-color 0s";d.id="udl";setTimeout(()=>{const x=document.getElementById("udl");if(x){x.style.borderColor="#46c46a";x.style.boxShadow="0 0 18px #46c46a"}},e.d)}
     tmo=setTimeout(()=>res(false,{why:"late"}),e.k==="delay"?e.d+1500:(e.rep?2000:1500))}
   function res(ok,x){clearTimeout(tmo);const e=seq.els[ei];if(!e)return;e.res=ok;const T=now();e.t_end=T;const tr={stage:seq.stage,k:e.k,b:e.b,ok,...x,trans:ei>0?r1((e.t_start||T)-lastEnd):null,prev:ei>0?seq.els[ei-1].k:null};rec.trials.push(tr);
@@ -994,7 +995,7 @@ function D16(){enter("kalea");const A=DB.adapt;if(!A.u)A.u={tol:20,trans:{},ghos
       slide_err_med:md(T.filter(x=>x.k==="slide"&&x.err_deg!=null).map(x=>x.err_deg)),tol_end:Math.round(U.tol),dbl_gap_med:md(T.filter(x=>x.gap_ms!=null).map(x=>x.gap_ms)),chord_sync_med:md(T.filter(x=>x.sync_ms!=null).map(x=>x.sync_ms)),
       delay_timing_med:md(T.filter(x=>x.timing_ms!=null).map(x=>x.timing_ms)),delay_early:T.filter(x=>x.early).reduce((s,x)=>s+x.early,0),trans_med:md(T.filter(x=>x.ok&&x.trans!=null).map(x=>x.trans)),weak};
     drillDone(rec,stp)}
-  msg("U · უნივერსალური ხელი","ზემოთ ზოლი გიჩვენებს „სქილ-ქესტს“ — შეასრულე მარჯვენა ცერით, <b>თვალი ზოლზე, არა ღილაკებზე</b>.<br>S2➜ = გაასრიალე რგოლზე ყვითელ წერტილამდე · ×2 = ორი სწრაფი შეხება · & = ერთად · ✕ = გადაიტანე ✕-ზე · ⏳ = დაელოდე მწვანეს<br>დააჭირე დასაწყებად");window.__U=()=>({st,e:seq&&seq.els[ei],readyT});RUN={on,finish:fin}}
+  msg("U · უნივერსალური ხელი","ზემოთ ზოლი გიჩვენებს „სქილ-ქესტს“ — 3 წამი გაქვს წასაკითხად, „GO“-ზე შეასრულე მარჯვენა ცერით. SPELL = სპელის ღილაკი (Flicker და სხვ.), <b>თვალი ზოლზე, არა ღილაკებზე</b>.<br>S2➜ = გაასრიალე რგოლზე ყვითელ წერტილამდე · ×2 = ორი სწრაფი შეხება · & = ერთად · ✕ = გადაიტანე ✕-ზე · ⏳ = დაელოდე მწვანეს<br>დააჭირე დასაწყებად");window.__U=()=>({st,e:seq&&seq.els[ei],readyT});RUN={on,finish:fin}}
 
 /* მარტივი გზა: drill-ები RUN-ს ბოლოს აყენებენ; მზადყოფნა ცალკე ობიექტია */
 function runDrill(fn){let pending=null;const orig=ready;ready=(t,n,cb)=>{pending={t,n,cb}};fn();const drillRun=RUN;ready=orig;
